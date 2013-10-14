@@ -1,0 +1,18 @@
+{{> common/head}}
+
+<section class="page {{{block 'pageClass'}}} active fade in" id="main">
+  {{{block 'pageHead'}}}
+  {{> common/navbarPrimary}}
+  <div class="content">
+    {{{block 'contentHead'}}}
+    <div class="main-content container">
+      {{{body}}}
+    </div>
+    {{{block 'contentFoot'}}}
+  </div>
+  {{{block 'pageFoot'}}}
+</section>
+
+{{! basket is fully UI-side basket/basket}}
+
+{{> common/foot}}
