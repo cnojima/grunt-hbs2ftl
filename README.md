@@ -17,68 +17,41 @@ Once the plugin has been installed, it may be enabled inside your Gruntfile with
 grunt.loadNpmTasks('grunt-sephora-hbs2ftl');
 ```
 
-## The "sephora_hbs2ftl" task
+## The "generate_layout" and "generate_templates" tasks
 
 ### Overview
-In your project's Gruntfile, add a section named `sephora_hbs2ftl` to the data object passed into `grunt.initConfig()`.
+In your project's Gruntfile, add a section named `generate_templates` and/or `generate_layout` to the data object passed into `grunt.initConfig()`.
+For convenience, it's recommended to set input and output paths in the gruntfile execution scope.
+
 
 ```js
+var viewsPath = __dirname + '/path/to/handlebars/templates',
+  ftlPath = __dirname + '/path/to/ftls';
+...
 grunt.initConfig({
-  sephora_hbs2ftl: {
-    options: {
-      // Task-specific options go here.
-    },
-    your_target: {
-      // Target-specific file lists and/or options go here.
-    },
+  generate_layout : {
+    all_layouts : {
+      files : [{
+        expand : true,
+        cwd : viewsPath + '/layouts/',
+        src : [ '*.hbs' ],
+        dest : ftlPath + '/layouts/', // path to ftl output folder relative to this Gruntfile.js
+        ext : '.ftl'
+      }]
+    }
   },
-})
-```
 
-### Options
-
-#### options.separator
-Type: `String`
-Default value: `',  '`
-
-A string value that is used to do something with whatever.
-
-#### options.punctuation
-Type: `String`
-Default value: `'.'`
-
-A string value that is used to do something else with whatever else.
-
-### Usage Examples
-
-#### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
-
-```js
-grunt.initConfig({
-  sephora_hbs2ftl: {
-    options: {},
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
-})
-```
-
-#### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
-
-```js
-grunt.initConfig({
-  sephora_hbs2ftl: {
-    options: {
-      separator: ': ',
-      punctuation: ' !!!',
-    },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
+  generate_templates : {
+    all_hbs : {
+      files : [{
+        expand : true,
+        cwd : viewsPath + '/',
+        src : [ '**/*.hbs', '!**/layouts/*.hbs' ],
+        dest : ftlPath + '/', // path to ftl output folder relative to this Gruntfile.js
+        ext : '.ftl'
+      }]
+    }
+  }
 })
 ```
 
@@ -86,4 +59,6 @@ grunt.initConfig({
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
-_(Nothing yet)_
+0.1.0 alpha with limited functionality released to the wild
+0.1.1 cleanup for npm publishing
+0.1.2 README.md updated, cruft pulled.
