@@ -60,5 +60,5 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 
 ## Release History
 0.1.0 alpha with limited functionality released to the wild
-0.1.1 cleanup for npm publishing
+0.1.1 cleanup for github and npm publishing
 0.1.2 README.md updated, cruft pulled.
