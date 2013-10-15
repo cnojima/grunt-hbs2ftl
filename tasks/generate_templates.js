@@ -75,7 +75,7 @@ module.exports = function(grunt) {
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
       // Print a success message.
-      grunt.log.writeln('File "' + f.dest + '" created.');
+      // grunt.log.writeln('File "' + f.dest + '" created.');
 
     });
   });
