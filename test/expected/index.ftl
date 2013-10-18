@@ -4,7 +4,7 @@
   <img src="/img/bg/bg-home.jpg" class="bg">
 </#global>
 <#global contentHead>
-  <#include "/common/catNav.ftl" />
+  <div id="cat-nav"></div>
 </#global>
 <#global pageScripts>
 <script>
@@ -28,7 +28,7 @@
 
 
 
-
+<div class="visible-xs">
 <div class="home-search">
   <input name="global_search" id="global_search" type="search" placeholder="Search" autocomplete="off" class="form-control input-sm">
   <span class="icon icon-search"></span>
@@ -89,6 +89,7 @@
 </div>
 
 <#include "/common/footNav.ftl" />
+</div><!-- .visible-xs -->
 
 
  </@layout.default>
