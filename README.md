@@ -63,3 +63,4 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 0.1.1 cleanup for github and npm publishing
 0.1.2 README.md updated, cruft pulled.
 0.1.3 references to internal name refactored to grunt-hbs2ftl
+0.1.6 handling handlebarsJS {{#with}} expression

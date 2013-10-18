@@ -33,14 +33,19 @@ exports.generate_layout = {
     var converted = grunt.file.read('tmp/index.ftl');
     var expected = grunt.file.read('test/expected/index.ftl');
     
-
     converted = converted.replace(/[\r\n]+/gim, '\n');
-    expected = expected.replace(/[\r\n]+/gim, '\n');
-    
     converted = converted.trim();
+    expected = expected.replace(/[\r\n]+/gim, '\n');
     expected = expected.trim();
     
     test.equal(converted, expected, 'home page conversion');
+
+    converted = grunt.file.read('tmp/checkout/checkout.ftl');
+    converted = converted.trim();
+    expected = grunt.file.read('test/expected/checkout.ftl');
+    expected = expected.trim();
+
+    test.equal(converted, expected, 'checkout page conversion');
 
     test.done();
   }

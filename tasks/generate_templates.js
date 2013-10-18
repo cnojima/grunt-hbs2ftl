@@ -34,6 +34,7 @@ module.exports = function(grunt) {
       src = convert.hbsBlocks(src);
 
       // convert each to list - high in order execution as it changes variable context internally
+      src = convert.hbsWith(src);
       src = convert.hbsEach(src);
 
       // convert special body block

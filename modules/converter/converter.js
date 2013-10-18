@@ -38,6 +38,31 @@ function hbsEach(s) {
   return s;
 }
 
+function hbsWith(s) {
+  s = s.replace(/{{#with (.*)}}/gim, '<#list $1 as this>');
+  s = s.replace(/{{\/with}}/gim, '</#list>');
+
+  var inList,
+    ret = s.substr(0, s.indexOf('<#list')),
+    lists = s.match(/<#list \w+>?[^\/#global].*[\s\S\n\r]*?<\/#list>/gim);
+
+  if(lists) {
+    for(var i=0, n=lists.length; i<n; i++) {
+      inList = lists[i];
+    
+      // handle simple variable assignments
+      inList = hbsTokens(inList, 'this');
+
+      // handle if clauses with scope
+      inList = hbsIf(inList, 'this');
+
+      s = s.replace(lists[i], inList);
+    }
+  }
+
+  return s;
+}
+
 function hbsTokens(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
@@ -189,6 +214,7 @@ console.log(handle);
    * 
    */
   hbsTokens : hbsTokens,
+  hbsWith : hbsWith,
 
   hbsBlocks : function(s) {
     s = s.replace(/{{{block [\'|\"](\w+)[\'|\"]}}}/gim, '${$1!""}');
