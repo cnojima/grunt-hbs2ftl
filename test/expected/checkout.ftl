@@ -1,10 +1,8 @@
 <#global pageHead>
 <nav class="navbar navbar-fixed-top navbar-checkout">
   <div class="container">
-    <a href="#basket" class="navbar-right basket-trigger" data-toggle="tab"><span class="icon icon-basket"><span class="badge">${basket.itemCount!""}</span></span></a>
-    <div class="navbar-header">
-      <a class="navbar-title" href="/"><img src="/img/logo.svg" width="130" height="17" alt="Sephora"></a>
-    </div>
+    <a href="#basket" class="basket-trigger" data-toggle="tab"><span class="icon icon-basket"><span class="badge">${basket.itemCount!""}</span></span></a>
+    <a class="navbar-title" href="/"><img src="/img/logo.svg" width="130" height="17" alt="Sephora"></a>
   </div>
 </nav>
 </#global>
