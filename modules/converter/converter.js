@@ -79,7 +79,7 @@ function hbsTokens(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -180,7 +180,7 @@ module.exports = {
   },
 
   hbsHelpers : function(s) {
-    var handle, handleRegex, regex = /{{#(\w+)?[^}]*}}/gim;
+    var handle, handleRegex, regex = /{{#(\w+)?[^}]*}}/gim, regexTriple;
 
     matches = s.match(regex);
     if(matches) {
@@ -196,14 +196,23 @@ module.exports = {
 
     // handle other syntax
     matches = s.match(/{{{([^}]+)}}}/gim);
+    
     if(matches) {
 console.log(matches);
+      var re;
+
       for(var i=0, n=matches.length; i<n; i++) {
         handle = matches[i].replace(/[{}]/gim, '');
         if(handle.indexOf(' ') > -1) {
           handle = handle.substr(0, handle.indexOf(' '));
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+console.log(handle, re);
+          regexTriple = new RegExp(re, 'gim');
+
+          s = s.replace(regexTriple, '<@helper.$1$2/>');
+// console.log(s);
         }
-console.log(handle);
+
       }
     }
 
