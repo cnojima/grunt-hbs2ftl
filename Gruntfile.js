@@ -92,6 +92,9 @@ module.exports = function(grunt) {
   // By default, lint and run all tasks with tests.
   grunt.registerTask('default', ['jshint', 'hbs2ftl']);
 
+  // just run tests
+  grunt.registerTask('test', [ 'jshint', 'nodeunit' ]);
+
   // CN: dev tasks
   grunt.registerTask('hbseach', ['convert_hbsEach']);
 };

@@ -1,4 +1,5 @@
-var matches = [];
+var matches = [],
+  scopeDepth = [];
 
 
 
@@ -13,7 +14,51 @@ function normalizeNamespace(n) {
   return n;
 }
 
-function hbsEach(s) {
+
+
+function hbsEach(s, namespace) {
+  var
+    matches, eachStartDelta, newEach = '', 
+    beforeEach, innerEach, afterEach, scopeNamespace,
+    eachStartIdx = s.search(/{{#each (.*)}}/im),
+    eachEndIdx = s.lastIndexOf('{{/each}}');
+
+  namespace = namespace || '';
+  namespace = normalizeNamespace(namespace);
+
+  if(eachStartIdx > -1) {
+    matches = s.match(/{{#each (.*)}}/im);
+    beforeEach = s.substr(0, eachStartIdx);
+    afterEach = s.substr(eachEndIdx + 9);
+
+
+    if(matches) {
+      scopeNamespace = 'i_' + matches[1];
+      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      eachStartDelta = matches[0].length;
+      innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
+
+      innerEach = hbsEach(innerEach, scopeNamespace);
+
+      // handle simple variable assignments
+      innerEach = hbsTokens(innerEach, scopeNamespace);
+
+      // handle if clauses with scope
+      innerEach = hbsIf(innerEach, scopeNamespace);
+
+      newEach += innerEach;
+      newEach += '</#list>';
+    }
+
+    s = [ beforeEach, newEach, afterEach ].join('');
+// console.log('\n\n\n-------------------------------')
+// console.log(s);
+  }
+
+  return s;
+}
+
+function hbsEach_v1(s) {
   s = s.replace(/{{#each (.*)}}/gim, '<#list $1 as this>');
   s = s.replace(/{{\/each}}/gim, '</#list>');
 
@@ -79,7 +124,8 @@ function hbsTokens(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
+  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 

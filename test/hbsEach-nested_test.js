@@ -29,11 +29,11 @@ exports.generate_layout = {
     done();
   },
 
-  hbsEach : function(test) {
+  hbsEach_nested : function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/test/func_test_hbsEach.ftl', { encoding : 'utf8'});
-    var expected = grunt.file.read('test/expected/hbsEach.ftl', { encoding : 'utf8'});
+    var actual = grunt.file.read('tmp/test/func_test_hbsEachNested.ftl', { encoding : 'utf8'});
+    var expected = grunt.file.read('test/expected/hbsEach-nested.ftl', { encoding : 'utf8'});
     
     
     actual = actual.replace(/[\r\n]+/gim, '\n');

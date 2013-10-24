@@ -28,7 +28,7 @@ exports.generate_layout = {
     done();
   },
 
-  view_template_conversion : function(test) {
+/*  view_template_conversion : function(test) {
     test.expect(1);
     var converted = grunt.file.read('tmp/index.ftl');
     var expected = grunt.file.read('test/expected/index.ftl');
@@ -42,7 +42,7 @@ exports.generate_layout = {
 
     test.done();
   },
-
+*/
   checkout_conversion : function(test) {
     var converted = grunt.file.read('tmp/checkout/checkout.ftl');
     var expected = grunt.file.read('test/expected/checkout.ftl');
