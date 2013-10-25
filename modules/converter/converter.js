@@ -1,7 +1,7 @@
 var matches = [],
-  scopeDepth = [];
-
-
+  scopeDepth = [],
+  xmldom = require('xmldom');
+  //xml2json = require(__dirname + '../../../node_modules/node-xml2json/lib/xml2json.js');
 
 
 function normalizeNamespace(n) {
@@ -15,13 +15,139 @@ function normalizeNamespace(n) {
 }
 
 
+// var x2j = 
+
+
+
+var helperWhitelist = [
+  'tel_anchor', 'staticVersion', 'hbstemplates'
+];
+function hbsHelpers(s, namespace) {
+  var matches, handle, handleRegex, regexTriple,
+    regex = /{{#(\w+)?[^}]*}}/gim;
+
+  namespace = namespace || '';
+  namespace = normalizeNamespace(namespace);
+
+  matches = s.match(regex);
+  if(matches) {
+    // extract helper handle
+    handle = matches[0].replace('{{#', '');
+    handle = handle.substr(0, handle.indexOf(' '));
+// console.log(handle);
+
+    if(helperWhitelist.indexOf(handle) > -1) {
+      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
+      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
+      s = s.replace(handleRegex, '</@helper.' + handle + '>');
+    }
+  }
+
+  // handle other syntax
+  matches = s.match(/{{{([^}]+)}}}/gim);
+  
+  if(matches) {
+//console.log(matches);
+    var re;
+
+    for(var i=0, n=matches.length; i<n; i++) {
+      handle = matches[i].replace(/[{}]/gim, '');
+      if(handle.indexOf(' ') > -1) {
+        if(helperWhitelist.indexOf(handle) > -1) {
+          handle = handle.substr(0, handle.indexOf(' '));
+  //console.log(handle, re);
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          regexTriple = new RegExp(re, 'gim');
+
+          s = s.replace(regexTriple, '<@helper.$1$2/>');
+        }
+      }
+    }
+  }
+
+  return s;
+}
+
+
 
 function hbsEach(s, namespace) {
+  var
+    peers = [],
+    matches, eachStartDelta, newEach = '', 
+    beforeEach, innerEach, afterEach, scopeNamespace,
+    eachStartIdx = s.search(/{{#each (.*)}}/im),
+    eachEndIdx = s.indexOf('{{/each}}');
+    // eachEndIdx = s.lastIndexOf('{{/each}}');
+
+  namespace = namespace || '';
+  namespace = normalizeNamespace(namespace);
+
+
+
+
+
+// var x = xmldom.DOMParser;
+// var xml = new x().parseFromString(s);
+
+// console.log(xml);
+
+
+
+// process.exit();
+
+  if(eachStartIdx > -1) {
+    // find indices of all start/ends
+
+    // handle n-peer {{#each}}'s'
+
+    // peers.push
+
+
+
+    matches = s.match(/{{#each (.*)}}/im);
+// console.log(matches);
+// process.exit();
+    beforeEach = s.substr(0, eachStartIdx);
+    afterEach = s.substr(eachEndIdx + 9);
+
+
+    if(matches) {
+      scopeNamespace = 'i_' + matches[1].replace('.', '_');
+      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      eachStartDelta = matches[0].length;
+      innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
+
+      innerEach = hbsEach(innerEach, scopeNamespace);
+
+      // handle simple variable assignments
+      innerEach = hbsTokens(innerEach, scopeNamespace);
+
+      // handle if clauses with scope
+      innerEach = hbsIf(innerEach, scopeNamespace);
+
+      // handle helpers in scoped calls
+      innerEach = hbsHelpers(innerEach, scopeNamespace);
+
+      newEach += innerEach;
+      newEach += '</#list>';
+    }
+
+    s = [ beforeEach, newEach, afterEach ].join('');
+// console.log('\n\n\n-------------------------------')
+// console.log(s);
+  }
+
+  return s;
+}
+
+
+function hbsEach_v2(s, namespace) {
   var
     matches, eachStartDelta, newEach = '', 
     beforeEach, innerEach, afterEach, scopeNamespace,
     eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.lastIndexOf('{{/each}}');
+    eachEndIdx = s.indexOf('{{/each}}');
+    // eachEndIdx = s.lastIndexOf('{{/each}}');
 
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
@@ -225,45 +351,7 @@ module.exports = {
     return s;
   },
 
-  hbsHelpers : function(s) {
-    var handle, handleRegex, regex = /{{#(\w+)?[^}]*}}/gim, regexTriple;
-
-    matches = s.match(regex);
-    if(matches) {
-      // extract helper handle
-      handle = matches[0].replace('{{#', '');
-      handle = handle.substr(0, handle.indexOf(' '));
-// console.log(handle);
-      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
-
-      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
-      s = s.replace(handleRegex, '</@helper.' + handle + '>');
-    }
-
-    // handle other syntax
-    matches = s.match(/{{{([^}]+)}}}/gim);
-    
-    if(matches) {
-console.log(matches);
-      var re;
-
-      for(var i=0, n=matches.length; i<n; i++) {
-        handle = matches[i].replace(/[{}]/gim, '');
-        if(handle.indexOf(' ') > -1) {
-          handle = handle.substr(0, handle.indexOf(' '));
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-console.log(handle, re);
-          regexTriple = new RegExp(re, 'gim');
-
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
-// console.log(s);
-        }
-
-      }
-    }
-
-    return s;
-  },
+  hbsHelpers : hbsHelpers,
 
   /**
    * 

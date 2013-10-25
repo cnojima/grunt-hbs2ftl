@@ -63,12 +63,23 @@ module.exports = function(grunt) {
     },
 
     // Development WIP
-    convert_hbsEach : {
+    convert_hbsEachAll : {
       test_hbs : {
         files : [{
           expand : true,
           cwd : viewsPath + '/test',
           src : [ '**/*.hbs' ],
+          dest : 'tmp/test/',
+          ext : '.ftl'
+        }]
+      }
+    },
+    convert_hbsEach : {
+      test_hbs : {
+        files : [{
+          expand : true,
+          cwd : viewsPath + '/test',
+          src : [ 'func_test_hbsEach.hbs' ],
           dest : 'tmp/test/',
           ext : '.ftl'
         }]
@@ -96,5 +107,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', [ 'jshint', 'nodeunit' ]);
 
   // CN: dev tasks
+  grunt.registerTask('hbseachall', ['convert_hbsEachAll']);
   grunt.registerTask('hbseach', ['convert_hbsEach']);
 };
