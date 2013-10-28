@@ -64,4 +64,4 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 0.1.2 README.md updated, cruft pulled.
 0.1.3 references to internal name refactored to grunt-hbs2ftl
 0.1.6 handling handlebarsJS {{#with}} expression
-0.1.7 8093
+0.1.14 handling of embedded {{#each}}'s as well as peer {{#each}}'s at all depths.

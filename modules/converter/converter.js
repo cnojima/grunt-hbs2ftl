@@ -1,7 +1,5 @@
 var matches = [],
-  scopeDepth = [],
-  xmldom = require('xmldom');
-  //xml2json = require(__dirname + '../../../node_modules/node-xml2json/lib/xml2json.js');
+  scopeDepth = [];
 
 
 function normalizeNamespace(n) {
@@ -13,9 +11,6 @@ function normalizeNamespace(n) {
 
   return n;
 }
-
-
-// var x2j = 
 
 
 
@@ -37,6 +32,7 @@ function hbsHelpers(s, namespace) {
 // console.log(handle);
 
     if(helperWhitelist.indexOf(handle) > -1) {
+console.log(' -------------------- helper match [ ' + handle + ' ]');
       handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
       s = s.replace(handleRegex, '</@helper.' + handle + '>');
@@ -70,84 +66,88 @@ function hbsHelpers(s, namespace) {
 
 
 
+/*******************************************************************************
+ **** {{#each}} handlers                                                    ****
+ *******************************************************************************/
 function hbsEach(s, namespace) {
-  var
-    peers = [],
-    matches, eachStartDelta, newEach = '', 
-    beforeEach, innerEach, afterEach, scopeNamespace,
-    eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.indexOf('{{/each}}');
-    // eachEndIdx = s.lastIndexOf('{{/each}}');
-
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
 
+  var raw, rawFtl, strPos, match, 
+    matches = s.match(/{{#each ([\w\.]+[^}])}}/gim);
 
+  console.log(matches);
 
+  if(matches) {
+    for(var i=0, n=matches.length; i<n; i++) {
+      if(s.indexOf(matches[i])) {
+// console.log('FULL S\n' + s);
+        raw = _extractEachBlock(s, matches[i]);
 
+        if(raw) {
+console.log('RAW\n' + raw);
+          rawFtl = _handleEachRecursive(raw, namespace);
+          s = s.replace(raw, rawFtl);
 
-// var x = xmldom.DOMParser;
-// var xml = new x().parseFromString(s);
-
-// console.log(xml);
-
-
-
-// process.exit();
-
-  if(eachStartIdx > -1) {
-    // find indices of all start/ends
-
-    // handle n-peer {{#each}}'s'
-
-    // peers.push
-
-
-
-    matches = s.match(/{{#each (.*)}}/im);
-// console.log(matches);
-// process.exit();
-    beforeEach = s.substr(0, eachStartIdx);
-    afterEach = s.substr(eachEndIdx + 9);
-
-
-    if(matches) {
-      scopeNamespace = 'i_' + matches[1].replace('.', '_');
-      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
-      eachStartDelta = matches[0].length;
-      innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
-
-      innerEach = hbsEach(innerEach, scopeNamespace);
-
-      // handle simple variable assignments
-      innerEach = hbsTokens(innerEach, scopeNamespace);
-
-      // handle if clauses with scope
-      innerEach = hbsIf(innerEach, scopeNamespace);
-
-      // handle helpers in scoped calls
-      innerEach = hbsHelpers(innerEach, scopeNamespace);
-
-      newEach += innerEach;
-      newEach += '</#list>';
+          if(s.indexOf('{{#each' > -1)) {
+            s = hbsEach(s, namespace);
+// console.log(s); process.exit();
+          }
+        }
+      }
     }
-
-    s = [ beforeEach, newEach, afterEach ].join('');
-// console.log('\n\n\n-------------------------------')
-// console.log(s);
   }
 
   return s;
 }
 
+/**
+ * returns one {{#each}}{{/each}} block, tags inclusive, including any embedded {{#each}}'s
+ */
+function _extractEachBlock(s, each) {
+  var start = s.indexOf(each),
+    sChunk = s.substr(start),
+    nthEachPos = 1,
+    depth = 0,
+    firstCloser = sChunk.indexOf('{{/each}}'),
+    lastCloser = start,
+    ret = '';
 
-function hbsEach_v2(s, namespace) {
+
+
+  if(start > -1) {
+console.log('searching for ' + each);// console.log('in:', sChunk); console.log(start);
+    while(
+      start > 0 &&
+      firstCloser > -1 && 
+      nthEachPos > -1 && 
+      nthEachPos < firstCloser &&
+      depth < 10
+    ) {
+      nthEachPos = sChunk.indexOf('{{#each', nthEachPos) + 1;
+      depth++;
+  //console.log(nthEachPos);console.log('depth: ' + depth);console.log(sChunk);
+    }
+
+    // find last matching {{/each}}
+
+    while(depth > -1) {
+      lastCloser = s.indexOf('{{/each}}', lastCloser) + 9;
+      depth--;
+    }
+
+    //ret = s.substr(start, lastCloser-start + 8);
+    ret = s.substr(start, lastCloser-start);
+  }
+  return ret;
+}
+
+function _handleEachRecursive(s, namespace) {
   var
     matches, eachStartDelta, newEach = '', 
     beforeEach, innerEach, afterEach, scopeNamespace,
     eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.indexOf('{{/each}}');
-    // eachEndIdx = s.lastIndexOf('{{/each}}');
+    eachEndIdx = s.lastIndexOf('{{/each}}');
 
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
@@ -164,7 +164,7 @@ function hbsEach_v2(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
-      innerEach = hbsEach(innerEach, scopeNamespace);
+      innerEach = _handleEachRecursive(innerEach, scopeNamespace);
 
       // handle simple variable assignments
       innerEach = hbsTokens(innerEach, scopeNamespace);
@@ -183,6 +183,43 @@ function hbsEach_v2(s, namespace) {
 
   return s;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function hbsEach_v1(s) {
   s = s.replace(/{{#each (.*)}}/gim, '<#list $1 as this>');

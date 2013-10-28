@@ -13,7 +13,6 @@ var path = require('path'),
 
 
 module.exports = function(grunt) {
-
   // Project configuration.
   grunt.initConfig({
     jshint: {
@@ -50,7 +49,7 @@ module.exports = function(grunt) {
         files : [{
           expand : true,
           cwd : viewsPath + '/',
-          src : [ '**/*.hbs', '!**/layouts/*.hbs' ],
+          src : [ 'test/func_test_hbsEachDeep.hbs', '!**/layouts/*.hbs' ],
           dest : 'tmp/', // path to ftl output folder relative to this Gruntfile.js
           ext : '.ftl'
         }]
@@ -85,17 +84,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
-  // Whenever the "test" task is run, first clean the "tmp" dir, then run this
-  // plugin's task(s), then test the result.
-  grunt.registerTask('hbs2ftl', ['clean', 'generate_layout', 'generate_templates', 'nodeunit']);
-
   // By default, lint and run all tasks with tests.
-  grunt.registerTask('default', ['jshint', 'hbs2ftl']);
+  grunt.registerTask('default', [ 'jshint', 'clean', 'generate_templates' ]);
 
   // just run tests
   grunt.registerTask('test', [ 'clean', 'jshint', 'nodeunit' ]);
-
-  // CN: dev tasks
-  grunt.registerTask('hbseachall', [ 'clean', 'convert_hbsEachAll']);
-  grunt.registerTask('hbseach', [ 'clean', 'convert_hbsEach']);
 };
