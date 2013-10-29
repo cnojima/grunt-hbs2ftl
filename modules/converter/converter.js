@@ -119,7 +119,7 @@ function _convertOneEachBlock(s, namespace) {
     afterEach = s.substr(eachEndIdx + 9);
 
     if(matches) {
-      scopeNamespace = 'i_' + matches[1];
+      scopeNamespace = 'i_' + matches[1].replace('.', '_');
       newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
