@@ -77,7 +77,7 @@
       <div class="col-xs-8">
         <#list payment as i_payment>
           <p>{${i_payment.formatCC paymentGroupType cardType cardNumber!""}}</p>
-        </@helper.each>
+        </#list>
         <#if payment.length < 1>
         <p>Add</p>
         </#if>
@@ -92,25 +92,9 @@
         <h5>Promo</h5>
       </div>
       <div class="col-xs-8">
-        <#if i_payment.promotionsApplied??>
-        <#list i_payment.promotions as i_promotions></#list>
-        <#if payment.length < 1>
-        <p>Add</p>
-        </#if>
-      </div>
-    </div>
-    <i class="arrow arrow-right"></i>
-  </div>
-  
-  <div class="list-group-item has-child" id="promotion">
-    <div class="row">
-      <div class="col-xs-4">
-        <h5>Promo</h5>
-      </div>
-      <div class="col-xs-8">
-        <#if i_payment.promotionsApplied??>
-        <@helper.each promotions>
-        <p>${i_payment.displayName!""}</p>
+        <#if promotionsApplied??>
+        <#list promotions as i_promotions>
+        <p>${i_promotions.displayName!""}</p>
         </#list>
 
         <#else>

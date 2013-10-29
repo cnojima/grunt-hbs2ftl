@@ -7,20 +7,14 @@
     <#--  "this" is implied in hbs -->
     <#list myVar as i_myVar>
       ${i_myVar.foo!""} is ${i_myVar.bar!""}
-    </@helper.each>
+    </#list>
   </p>
 
   lotsa stuff here....
 
   <p class="bar">
-    <#list i_myVar.myNamespace.listThing as i_myNamespace.listThing></#list>
-  </p>
-
-  lotsa stuff here....
-
-  <p class="bar">
-    <@helper.each myNamespace.listThing>
-      ${i_myVar.yetAnotherFoo!""} should be ${i_myVar.yetAnotherBar!""}
+    <#list myNamespace.listThing as i_myNamespace_listThing>
+      ${i_myNamespace_listThing.yetAnotherFoo!""} should be ${i_myNamespace_listThing.yetAnotherBar!""}
     </#list>
   </p>
 </div>

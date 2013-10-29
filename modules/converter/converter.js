@@ -69,14 +69,108 @@ console.log(' -------------------- helper match [ ' + handle + ' ]');
 /*******************************************************************************
  **** {{#each}} handlers                                                    ****
  *******************************************************************************/
-function hbsEach(s, namespace) {
+function hbsEach(s) {
+  var matches = s.match(/{{#each ([\w\.]+[^}])}}/gim),
+    sOriginal = s,
+    lastMatch, raw;
+
+  if(matches) {
+    while(matches.length > 0) {
+      lastMatch = matches.pop();
+      raw = _convertNthEach(s, lastMatch);
+      s = s.replace(raw, _convertOneEachBlock(raw));
+    }
+  }
+
+  return s;
+}
+
+/**
+ * returns one {{#each}}{{/each}} block, tags inclusive, including any embedded {{#each}}'s
+ */
+function _convertNthEach(s, each) {
+  var ret = '',
+    start = s.indexOf(each),
+    end = s.indexOf('{{/each}}', start) + 9;
+
+  if(start > -1 && end > start) {
+    ret = s.substr(start, end - start);
+    // console.log('----');
+    // console.log(ret);
+    // console.log('----');
+  }
+
+  return ret;
+}
+
+function _convertOneEachBlock(s, namespace) {
+  var
+    matches, eachStartDelta, newEach = '', 
+    beforeEach, innerEach, afterEach, scopeNamespace,
+    eachStartIdx = s.search(/{{#each (.*)}}/im),
+    eachEndIdx = s.lastIndexOf('{{/each}}');
+
+  namespace = namespace || '';
+  namespace = normalizeNamespace(namespace);
+
+  if(eachStartIdx > -1) {
+    matches = s.match(/{{#each (.*)}}/im);
+    beforeEach = s.substr(0, eachStartIdx);
+    afterEach = s.substr(eachEndIdx + 9);
+
+    if(matches) {
+      scopeNamespace = 'i_' + matches[1];
+      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      eachStartDelta = matches[0].length;
+      innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
+
+      // search text inbetween {{#each}} for <#list [var] as ...> and apply current scopeNamespace
+      innerEach = _applyNamespace(innerEach, scopeNamespace);
+
+      // handle simple variable assignments
+      innerEach = hbsTokens(innerEach, scopeNamespace);
+
+      // handle if clauses with scope
+      innerEach = hbsIf(innerEach, scopeNamespace);
+
+      newEach += innerEach;
+      newEach += '</#list>';
+    }
+
+    s = [ beforeEach, newEach, afterEach ].join('');
+// console.log('\n\n\n-------------------------------')
+// console.log(s);
+  }
+
+  return s;
+}
+
+function _applyNamespace(s, namespace) {
+  // handle <#list [var] as ns>
+  var re = /<#list ([\w]+) as ([\w]+)>/gim;
+  s = s.replace(re, '<#list ' + namespace + '.$1 as $2>');
+
+  return s;
+}
+
+
+
+
+
+
+
+
+
+
+
+function hbsEach_v2(s, namespace) {
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
 
   var raw, rawFtl, strPos, match, 
     matches = s.match(/{{#each ([\w\.]+[^}])}}/gim);
 
-  console.log(matches);
+  // console.log(matches);
 
   if(matches) {
     for(var i=0, n=matches.length; i<n; i++) {
@@ -85,7 +179,7 @@ function hbsEach(s, namespace) {
         raw = _extractEachBlock(s, matches[i]);
 
         if(raw) {
-console.log('RAW\n' + raw);
+// console.log('RAW\n' + raw);
           rawFtl = _handleEachRecursive(raw, namespace);
           s = s.replace(raw, rawFtl);
 
@@ -106,9 +200,48 @@ console.log('RAW\n' + raw);
  */
 function _extractEachBlock(s, each) {
   var start = s.indexOf(each),
+    eachPostion = start + 1,
+    end = firstCloser = s.indexOf('{{/each}}'),
+    depth = 0,
+    ret = '';
+
+
+
+  if(start > -1 && firstCloser > -1) {
+    var tmpPos = start;
+console.log('----------------------\nlooking for ' + each + '\n---------------\n'+s);
+    // find depth by parsing string until final position of each opener is found BEFORE the first closer
+    while(eachPostion > -1 && tmpPos > -1 && tmpPos < firstCloser) {
+      tmpPos = s.indexOf('{{#each', tmpPos + 1);
+      
+      if(tmpPos < firstCloser) {
+        depth++;
+        eachPostion = tmpPos;
+      }
+    }
+
+    // find position of last matching closer
+    while(depth > -1) {
+      depth--;
+
+      end = s.indexOf('{{/each}}', end);
+      end += 9;
+    }
+
+    ret = s.substr(start, end - start);
+    // console.log(ret);u
+  }
+
+  return ret;
+}
+
+
+
+function _extractEachBlock_v1(s, each) {
+  var start = s.indexOf(each),
     sChunk = s.substr(start),
     nthEachPos = 1,
-    depth = 0,
+    depth = 1,
     firstCloser = sChunk.indexOf('{{/each}}'),
     lastCloser = start,
     ret = '';
@@ -116,7 +249,7 @@ function _extractEachBlock(s, each) {
 
 
   if(start > -1) {
-console.log('searching for ' + each);// console.log('in:', sChunk); console.log(start);
+// console.log('searching for ' + each);// console.log('in:', sChunk); console.log(start);
     while(
       start > 0 &&
       firstCloser > -1 && 
@@ -136,7 +269,6 @@ console.log('searching for ' + each);// console.log('in:', sChunk); console.log(
       depth--;
     }
 
-    //ret = s.substr(start, lastCloser-start + 8);
     ret = s.substr(start, lastCloser-start);
   }
   return ret;

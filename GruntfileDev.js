@@ -49,7 +49,7 @@ module.exports = function(grunt) {
         files : [{
           expand : true,
           cwd : viewsPath + '/',
-          src : [ 'test/func_test_hbsEachDeep.hbs', '!**/layouts/*.hbs' ],
+          src : [ 'test/func_test_hbsEachDeep.hbs', /*'checkout/checkout.hbs',*/ '!**/layouts/*.hbs' ],
           dest : 'tmp/', // path to ftl output folder relative to this Gruntfile.js
           ext : '.ftl'
         }]
