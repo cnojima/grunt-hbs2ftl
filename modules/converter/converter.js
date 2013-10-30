@@ -17,22 +17,19 @@ function normalizeNamespace(n) {
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates'
 ];
-function hbsHelpers(s, namespace) {
-  var matches, handle, handleRegex, regexTriple,
+function hbsHelpers(s) {
+  var matches, handle, handleRegex, regexTriple, re,
     regex = /{{#(\w+)?[^}]*}}/gim;
 
-  namespace = namespace || '';
-  namespace = normalizeNamespace(namespace);
-
+  // handle {{#[helper] }}
   matches = s.match(regex);
+
   if(matches) {
     // extract helper handle
     handle = matches[0].replace('{{#', '');
     handle = handle.substr(0, handle.indexOf(' '));
-// console.log(handle);
 
     if(helperWhitelist.indexOf(handle) > -1) {
-console.log(' -------------------- helper match [ ' + handle + ' ]');
       handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
       s = s.replace(handleRegex, '</@helper.' + handle + '>');
@@ -43,18 +40,14 @@ console.log(' -------------------- helper match [ ' + handle + ' ]');
   matches = s.match(/{{{([^}]+)}}}/gim);
   
   if(matches) {
-//console.log(matches);
-    var re;
-
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]/gim, '');
+
       if(handle.indexOf(' ') > -1) {
-        if(helperWhitelist.indexOf(handle) > -1) {
+        if(helperWhitelist.indexOf(handle.trim()) > -1) {
           handle = handle.substr(0, handle.indexOf(' '));
-  //console.log(handle, re);
           re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
           regexTriple = new RegExp(re, 'gim');
-
           s = s.replace(regexTriple, '<@helper.$1$2/>');
         }
       }
@@ -379,10 +372,10 @@ function hbsEach_v1(s) {
 }
 
 function hbsWith(s) {
-  s = s.replace(/{{#with (.*)}}/gim, '<#list $1 as this>');
-  s = s.replace(/{{\/with}}/gim, '</#list>');
+  s = s.replace(/{{#with (.*)}}/gim, '<#assign this = $1>');
+  s = s.replace(/{{\/with}}/gim, '</#assign>');
 
-  var inList,
+/*  var inList,
     ret = s.substr(0, s.indexOf('<#list')),
     lists = s.match(/<#list \w+>?[^\/#global].*[\s\S\n\r]*?<\/#list>/gim);
 
@@ -399,7 +392,7 @@ function hbsWith(s) {
       s = s.replace(lists[i], inList);
     }
   }
-
+*/
   return s;
 }
 
