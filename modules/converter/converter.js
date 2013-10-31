@@ -129,7 +129,7 @@ function _convertOneWithBlock(s) {
     handle = handle.substr(0, handle.length - 2);
 
     s = s.replace(/{{#with (.*)}}/gim, '<#macro with_$1 $1>');
-    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + '/>');
+    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + handle + '/>');
     s = _applyNamespace(s, 'macro', handle);
     s = hbsTokens(s, handle);
 // console.log('--------------\n', s, '--------------');
