@@ -1,22 +1,39 @@
+util = require('util');
+// console.log(util.inspect(arguments[k], false, null, true))
+
 var matches = [],
   scopeDepth = [];
 
 
+/**
+ * add helper signatures here to help converter differentiate 
+ * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
+ */
+var helperWhitelist = [
+  'tel_anchor', 'staticVersion', 'hbstemplates'
+];
+
+
 function normalizeNamespace(n) {
   n = n || '';
-
-  if(n) {
-    n += '.';
-  }
-
+  if(n) n += '.';
   return n;
+}
+
+function _applyNamespace(s, type, namespace) {
+  var ftlTag = '<#' + type + ' ([\\w]+) as ([\\w]+)>',
+    re = new RegExp(ftlTag, 'gim');
+
+  return s.replace(re, '<#' + type + ' ' + namespace + '.$1 as $2>');
 }
 
 
 
-var helperWhitelist = [
-  'tel_anchor', 'staticVersion', 'hbstemplates'
-];
+
+
+
+
+
 function hbsHelpers(s) {
   var matches, handle, handleRegex, regexTriple, re,
     regex = /{{#(\w+)?[^}]*}}/gim;
@@ -59,41 +76,85 @@ function hbsHelpers(s) {
 
 
 
+
+
+
 /*******************************************************************************
- **** {{#each}} handlers                                                    ****
+ **** scope changing block converters                                       ****
  *******************************************************************************/
-function hbsEach(s) {
-  var matches = s.match(/{{#each ([\w\.]+[^}])}}/gim),
-    sOriginal = s,
+function _nth(s, type, callbackBlock) {
+  var matcher = '{{#' + type + ' ([\\w\\.]+[^}])}}',
+    re = new RegExp(matcher, "gim"),
+    matches = s.match(re),
     lastMatch, raw;
 
   if(matches) {
     while(matches.length > 0) {
       lastMatch = matches.pop();
-      raw = _convertNthEach(s, lastMatch);
-      s = s.replace(raw, _convertOneEachBlock(raw));
+      raw = _convertNth(s, type, lastMatch);
+      s = s.replace(raw, callbackBlock(raw));
     }
   }
 
+  return s;  
+}
+
+function _convertNth(s, type, match) {
+  type = '{{/' + type + '}}';
+  
+  var ret = '',
+    start = s.indexOf(match),
+    end = s.indexOf(type, start) + type.length;
+
+  if(start > -1 && end > start) {
+    ret = s.substr(start, end - start);
+  }
+
+  return ret;
+}
+
+
+/*******************************************************************************
+ **** {{#with}} handlers                                                    ****
+ *******************************************************************************/
+function hbsWith(s) {
+  return _nth(s, 'with', _convertOneWithBlock);
+}
+
+function _convertOneWithBlock(s) {
+  var handle = s.match(/{{#with\ [\w\.]+}}/im)[0];
+
+  if(handle) {
+    handle = handle.substr(8);
+    handle = handle.substr(0, handle.length - 2);
+
+    s = s.replace(/{{#with (.*)}}/gim, '<#macro with_$1 $1>');
+    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + '/>');
+    s = _applyNamespace(s, 'macro', handle);
+    s = hbsTokens(s, handle);
+// console.log('--------------\n', s, '--------------');
+    s = hbsIf(s, handle);
+    s = hbsEq(s, handle);
+  }
+  
   return s;
+}
+
+
+
+
+/*******************************************************************************
+ **** {{#each}} handlers                                                    ****
+ *******************************************************************************/
+function hbsEach(s) {
+  return _nth(s, 'each', _convertOneEachBlock);
 }
 
 /**
  * returns one {{#each}}{{/each}} block, tags inclusive, including any embedded {{#each}}'s
  */
 function _convertNthEach(s, each) {
-  var ret = '',
-    start = s.indexOf(each),
-    end = s.indexOf('{{/each}}', start) + 9;
-
-  if(start > -1 && end > start) {
-    ret = s.substr(start, end - start);
-    // console.log('----');
-    // console.log(ret);
-    // console.log('----');
-  }
-
-  return ret;
+  return _convertNth(s, 'each', each);
 }
 
 function _convertOneEachBlock(s, namespace) {
@@ -118,184 +179,14 @@ function _convertOneEachBlock(s, namespace) {
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
       // search text inbetween {{#each}} for <#list [var] as ...> and apply current scopeNamespace
-      innerEach = _applyNamespace(innerEach, scopeNamespace);
+      innerEach = _applyNamespace(innerEach, 'list', scopeNamespace);
 
       // handle simple variable assignments
       innerEach = hbsTokens(innerEach, scopeNamespace);
 
       // handle if clauses with scope
       innerEach = hbsIf(innerEach, scopeNamespace);
-
-      newEach += innerEach;
-      newEach += '</#list>';
-    }
-
-    s = [ beforeEach, newEach, afterEach ].join('');
-// console.log('\n\n\n-------------------------------')
-// console.log(s);
-  }
-
-  return s;
-}
-
-function _applyNamespace(s, namespace) {
-  // handle <#list [var] as ns>
-  var re = /<#list ([\w]+) as ([\w]+)>/gim;
-  s = s.replace(re, '<#list ' + namespace + '.$1 as $2>');
-
-  return s;
-}
-
-
-
-
-
-
-
-
-
-
-
-function hbsEach_v2(s, namespace) {
-  namespace = namespace || '';
-  namespace = normalizeNamespace(namespace);
-
-  var raw, rawFtl, strPos, match, 
-    matches = s.match(/{{#each ([\w\.]+[^}])}}/gim);
-
-  // console.log(matches);
-
-  if(matches) {
-    for(var i=0, n=matches.length; i<n; i++) {
-      if(s.indexOf(matches[i])) {
-// console.log('FULL S\n' + s);
-        raw = _extractEachBlock(s, matches[i]);
-
-        if(raw) {
-// console.log('RAW\n' + raw);
-          rawFtl = _handleEachRecursive(raw, namespace);
-          s = s.replace(raw, rawFtl);
-
-          if(s.indexOf('{{#each' > -1)) {
-            s = hbsEach(s, namespace);
-// console.log(s); process.exit();
-          }
-        }
-      }
-    }
-  }
-
-  return s;
-}
-
-/**
- * returns one {{#each}}{{/each}} block, tags inclusive, including any embedded {{#each}}'s
- */
-function _extractEachBlock(s, each) {
-  var start = s.indexOf(each),
-    eachPostion = start + 1,
-    end = firstCloser = s.indexOf('{{/each}}'),
-    depth = 0,
-    ret = '';
-
-
-
-  if(start > -1 && firstCloser > -1) {
-    var tmpPos = start;
-console.log('----------------------\nlooking for ' + each + '\n---------------\n'+s);
-    // find depth by parsing string until final position of each opener is found BEFORE the first closer
-    while(eachPostion > -1 && tmpPos > -1 && tmpPos < firstCloser) {
-      tmpPos = s.indexOf('{{#each', tmpPos + 1);
-      
-      if(tmpPos < firstCloser) {
-        depth++;
-        eachPostion = tmpPos;
-      }
-    }
-
-    // find position of last matching closer
-    while(depth > -1) {
-      depth--;
-
-      end = s.indexOf('{{/each}}', end);
-      end += 9;
-    }
-
-    ret = s.substr(start, end - start);
-    // console.log(ret);u
-  }
-
-  return ret;
-}
-
-
-
-function _extractEachBlock_v1(s, each) {
-  var start = s.indexOf(each),
-    sChunk = s.substr(start),
-    nthEachPos = 1,
-    depth = 1,
-    firstCloser = sChunk.indexOf('{{/each}}'),
-    lastCloser = start,
-    ret = '';
-
-
-
-  if(start > -1) {
-// console.log('searching for ' + each);// console.log('in:', sChunk); console.log(start);
-    while(
-      start > 0 &&
-      firstCloser > -1 && 
-      nthEachPos > -1 && 
-      nthEachPos < firstCloser &&
-      depth < 10
-    ) {
-      nthEachPos = sChunk.indexOf('{{#each', nthEachPos) + 1;
-      depth++;
-  //console.log(nthEachPos);console.log('depth: ' + depth);console.log(sChunk);
-    }
-
-    // find last matching {{/each}}
-
-    while(depth > -1) {
-      lastCloser = s.indexOf('{{/each}}', lastCloser) + 9;
-      depth--;
-    }
-
-    ret = s.substr(start, lastCloser-start);
-  }
-  return ret;
-}
-
-function _handleEachRecursive(s, namespace) {
-  var
-    matches, eachStartDelta, newEach = '', 
-    beforeEach, innerEach, afterEach, scopeNamespace,
-    eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.lastIndexOf('{{/each}}');
-
-  namespace = namespace || '';
-  namespace = normalizeNamespace(namespace);
-
-  if(eachStartIdx > -1) {
-    matches = s.match(/{{#each (.*)}}/im);
-    beforeEach = s.substr(0, eachStartIdx);
-    afterEach = s.substr(eachEndIdx + 9);
-
-
-    if(matches) {
-      scopeNamespace = 'i_' + matches[1];
-      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
-      eachStartDelta = matches[0].length;
-      innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
-
-      innerEach = _handleEachRecursive(innerEach, scopeNamespace);
-
-      // handle simple variable assignments
-      innerEach = hbsTokens(innerEach, scopeNamespace);
-
-      // handle if clauses with scope
-      innerEach = hbsIf(innerEach, scopeNamespace);
+      innerEach = hbsEq(innerEach, scopeNamespace);
 
       newEach += innerEach;
       newEach += '</#list>';
@@ -316,83 +207,38 @@ function _handleEachRecursive(s, namespace) {
 
 
 
+/*******************************************************************************
+ **** atomic {{#foo}} handlers                                              ****
+ *******************************************************************************/
 
+function hbsIf(s, namespace) {
+  namespace = normalizeNamespace(namespace);
 
+  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
+  // console.log(s.match(/{{#if ([\w\.]+[^}])}}/gim));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function hbsEach_v1(s) {
-  s = s.replace(/{{#each (.*)}}/gim, '<#list $1 as this>');
-  s = s.replace(/{{\/each}}/gim, '</#list>');
-
-  var inList,
-    ret = s.substr(0, s.indexOf('<#list')),
-    lists = s.match(/<#list \w+>?[^\/#global].*[\s\S\n\r]*?<\/#list>/gim);
-
-  if(lists) {
-    for(var i=0, n=lists.length; i<n; i++) {
-      inList = lists[i];
-    
-      // handle simple variable assignments
-      inList = hbsTokens(inList, 'this');
-
-      // handle if clauses with scope
-      inList = hbsIf(inList, 'this');
-
-      s = s.replace(lists[i], inList);
-    }
-  }
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
+  s = s.replace(/{{else}}/gim, '<#else>');
+  s = s.replace(/{{\/if}}/gim, '</#if>');
 
   return s;
 }
 
-function hbsWith(s) {
-  s = s.replace(/{{#with (.*)}}/gim, '<#assign this = $1>');
-  s = s.replace(/{{\/with}}/gim, '</#assign>');
+function hbsEq(s, namespace) {
+  namespace = normalizeNamespace(namespace);
+  
+  s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 == $2>');
+  s = s.replace(/{{\/eq}}/gim, '</#if>');
 
-/*  var inList,
-    ret = s.substr(0, s.indexOf('<#list')),
-    lists = s.match(/<#list \w+>?[^\/#global].*[\s\S\n\r]*?<\/#list>/gim);
+  s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 != $2>');
+  s = s.replace(/{{\/ne}}/gim, '</#if>');
 
-  if(lists) {
-    for(var i=0, n=lists.length; i<n; i++) {
-      inList = lists[i];
-    
-      // handle simple variable assignments
-      inList = hbsTokens(inList, 'this');
+  s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
+  s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-      // handle if clauses with scope
-      inList = hbsIf(inList, 'this');
+  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
+  s = s.replace(/{{\/gt}}/gim, '</#if>');
 
-      s = s.replace(lists[i], inList);
-    }
-  }
-*/
   return s;
 }
 
@@ -409,20 +255,16 @@ function hbsTokens(s, namespace) {
   return s;
 }
 
-function hbsIf(s, namespace) {
-  namespace = normalizeNamespace(namespace);
-
-  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
-  s = s.replace(/{{else}}/gim, '<#else>');
-  s = s.replace(/{{\/if}}/gim, '</#if>');
-
-  return s;
-}
 
 
 
 module.exports = {
+  hbsEach         : hbsEach,
+  hbsEq           : hbsEq,
+  hbsHelpers      : hbsHelpers,
+  hbsTokens       : hbsTokens,
+  hbsWith         : hbsWith,
+
   injectMacroHandle: function(s, name) {
     return [
       '<#macro ', name, '>\n',
@@ -456,22 +298,6 @@ module.exports = {
     return s;
   },
 
-  hbsEq : function(s) {
-    s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, '<#if $1 == $2>');
-    s = s.replace(/{{\/eq}}/gim, '</#if>');
-
-    s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, '<#if $1 != $2>');
-    s = s.replace(/{{\/ne}}/gim, '</#if>');
-
-    s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if $1 < $2>');
-    s = s.replace(/{{\/lt}}/gim, '</#if>');
-
-    s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if $1 > $2>');
-    s = s.replace(/{{\/gt}}/gim, '</#if>');
-
-    return s;
-  },
-
   hbsDefault : function(s) {
     //{{#default 'US' country}}{{/default}}
     s = s.replace(/{{\/default}}/gim, '');
@@ -487,7 +313,6 @@ module.exports = {
     return s.replace(/{{{body}}}/gim, '<#nested>');
   },
 
-  hbsEach : hbsEach,
 
   hbsUnless : function(s) {
     // s = s.replace(/{{#unless ([a-z\.\!]+)}}/gim, '<#if !$1??>');
@@ -512,14 +337,6 @@ module.exports = {
 
     return s;
   },
-
-  hbsHelpers : hbsHelpers,
-
-  /**
-   * 
-   */
-  hbsTokens : hbsTokens,
-  hbsWith : hbsWith,
 
   hbsBlocks : function(s) {
     s = s.replace(/{{{block [\'|\"](\w+)[\'|\"]}}}/gim, '${$1!""}');

@@ -65,3 +65,4 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 0.1.3 references to internal name refactored to grunt-hbs2ftl
 0.1.6 handling handlebarsJS {{#with}} expression
 0.1.14 handling of embedded {{#each}}'s as well as peer {{#each}}'s at all depths.
+0.1.16 handling {{#with}} changing execution scope context in freemarker
