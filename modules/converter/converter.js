@@ -10,7 +10,7 @@ var matches = [],
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
  */
 var helperWhitelist = [
-  'tel_anchor', 'staticVersion', 'hbstemplates'
+  'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ];
 
 
@@ -57,6 +57,7 @@ function hbsHelpers(s) {
   matches = s.match(/{{{([^}]+)}}}/gim);
   
   if(matches) {
+    // console.log(matches);
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]/gim, '');
 
@@ -214,10 +215,11 @@ function _convertOneEachBlock(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
   // console.log(s.match(/{{#if ([\w\.]+[^}])}}/gim));
 
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
+  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '($1??)>');// && ' + namespace + '($1??)!false>');
+  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if (' + namespace + '$1)?has_content>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -236,15 +238,17 @@ function hbsEq(s, namespace) {
   s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
   s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
+  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 &gt; $2>');
   s = s.replace(/{{\/gt}}/gim, '</#if>');
 
   return s;
 }
 
 function hbsTokens(s, namespace) {
-  namespace = normalizeNamespace(namespace);
+  // handle explicit {{this}}
+  s = s.replace(/{{this}}/gim, namespace);
 
+  namespace = normalizeNamespace(namespace);
   s = s.replace(/{{([ a-z0-9_\-\.]+)}}/gim, '${' + namespace + '$1!""}');
 
   // dumb sanity
