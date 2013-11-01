@@ -35,7 +35,7 @@ function _applyNamespace(s, type, namespace) {
 
 
 function hbsHelpers(s) {
-  var matches, handle, handleRegex, regexTriple, re,
+  var matches, handle, handleRegex, regexTriple, re, xx,
     regex = /{{#(\w+)?[^}]*}}/gim;
 
   // handle {{#[helper] }}
@@ -57,11 +57,14 @@ function hbsHelpers(s) {
   matches = s.match(/{{{([^}]+)}}}/gim);
   
   if(matches) {
-    // console.log(matches);
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]/gim, '');
 
       if(handle.indexOf(' ') > -1) {
+        xx = handle.split(' ');
+
+        handle = xx[0];
+
         if(helperWhitelist.indexOf(handle.trim()) > -1) {
           handle = handle.substr(0, handle.indexOf(' '));
           re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
@@ -114,6 +117,17 @@ function _convertNth(s, type, match) {
   return ret;
 }
 
+function _applyScopingConversion(s, namespace) {
+  s = hbsHelpers(s);
+  s = _applyNamespace(s, 'macro', namespace);
+  s = hbsTokens(s, namespace);
+// console.log('--------------\n', s, '--------------');
+  s = hbsIf(s, namespace);
+  s = hbsEq(s, namespace);
+
+  return s;
+}
+
 
 /*******************************************************************************
  **** {{#with}} handlers                                                    ****
@@ -129,13 +143,10 @@ function _convertOneWithBlock(s) {
     handle = handle.substr(8);
     handle = handle.substr(0, handle.length - 2);
 
+
     s = s.replace(/{{#with (.*)}}/gim, '<#macro with_$1 $1>');
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + handle + '/>');
-    s = _applyNamespace(s, 'macro', handle);
-    s = hbsTokens(s, handle);
-// console.log('--------------\n', s, '--------------');
-    s = hbsIf(s, handle);
-    s = hbsEq(s, handle);
+    s = _applyScopingConversion(s, handle);
   }
   
   return s;
@@ -179,15 +190,17 @@ function _convertOneEachBlock(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
-      // search text inbetween {{#each}} for <#list [var] as ...> and apply current scopeNamespace
-      innerEach = _applyNamespace(innerEach, 'list', scopeNamespace);
+      innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
-      // handle simple variable assignments
-      innerEach = hbsTokens(innerEach, scopeNamespace);
+      // // search text inbetween {{#each}} for <#list [var] as ...> and apply current scopeNamespace
+      // innerEach = _applyNamespace(innerEach, 'list', scopeNamespace);
 
-      // handle if clauses with scope
-      innerEach = hbsIf(innerEach, scopeNamespace);
-      innerEach = hbsEq(innerEach, scopeNamespace);
+      // // handle simple variable assignments
+      // innerEach = hbsTokens(innerEach, scopeNamespace);
+
+      // // handle if clauses with scope
+      // innerEach = hbsIf(innerEach, scopeNamespace);
+      // innerEach = hbsEq(innerEach, scopeNamespace);
 
       newEach += innerEach;
       newEach += '</#list>';
@@ -215,11 +228,11 @@ function _convertOneEachBlock(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
+  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
   // console.log(s.match(/{{#if ([\w\.]+[^}])}}/gim));
 
-  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '($1??)>');// && ' + namespace + '($1??)!false>');
   // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if (' + namespace + '$1)?has_content>');
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -238,18 +251,22 @@ function hbsEq(s, namespace) {
   s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
   s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 &gt; $2>');
+  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
   s = s.replace(/{{\/gt}}/gim, '</#if>');
 
   return s;
 }
 
 function hbsTokens(s, namespace) {
-  // handle explicit {{this}}
-  s = s.replace(/{{this}}/gim, namespace);
-
   namespace = normalizeNamespace(namespace);
+
   s = s.replace(/{{([ a-z0-9_\-\.]+)}}/gim, '${' + namespace + '$1!""}');
+
+  // silly
+  s = s.replace('.this!""}', '}');
+
+  // hbs upwards scoping - ftl walks the scope tree up
+  s = s.replace(/\.\.\//gim, '');
 
   // dumb sanity
   if(s.indexOf('this.this')) {
