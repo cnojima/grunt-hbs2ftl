@@ -30,6 +30,10 @@ module.exports = function(grunt) {
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
+      // convert contentFor
+      src = convert.hbsContentFor(src);
+
+
       // convert blocks
       src = convert.hbsBlocks(src);
 
@@ -49,8 +53,8 @@ module.exports = function(grunt) {
       // convert comments
       src = convert.hbsComments(src);
 
-      // convert contentFor
-      src = convert.hbsContentFor(src);
+      // // convert contentFor
+      // src = convert.hbsContentFor(src);
 
       // convert if/else
       src = convert.hbsIf(src);

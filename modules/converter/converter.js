@@ -319,13 +319,6 @@ module.exports = {
     return s;
   },
 
-  hbsDefault : function(s) {
-    //{{#default 'US' country}}{{/default}}
-    s = s.replace(/{{\/default}}/gim, '');
-    s = s.replace(/{{#default [\'\"]+([\w\d]+)[\"\']+ ([\w\d]+)}}/gim, '${$2!"$1"}');
-    return s;
-  },
-
   hbsIncludes : function(s) {
     return s.replace(/{{> (.*)}}/gim, '<#include "/$1.ftl" />');
   },
@@ -334,6 +327,12 @@ module.exports = {
     return s.replace(/{{{body}}}/gim, '<#nested>');
   },
 
+  hbsDefault : function(s) {
+    //{{#default 'US' country}}{{/default}}
+    s = s.replace(/{{\/default}}/gim, '');
+    s = s.replace(/{{#default [\'\"]+([\w\d]+)[\"\']+ ([\w\d]+)}}/gim, '${$2!"$1"}');
+    return s;
+  },
 
   hbsUnless : function(s) {
     // s = s.replace(/{{#unless ([a-z\.\!]+)}}/gim, '<#if !$1??>');
