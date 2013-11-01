@@ -68,8 +68,8 @@ module.exports = function(grunt) {
       // convert default into string interpolator
       src = convert.hbsDefault(src);
 
-      // handle html literals
-      src = convert.hbsNoEscape(src);
+      // handle html literals - also in hbstokens for namespacing
+      src = convert.hbsNoEscape(src); 
 
       // convert handlebars helpers in user-directives
       src = convert.hbsHelpers(src); // must be run AFTER convert.hbsBlocks()

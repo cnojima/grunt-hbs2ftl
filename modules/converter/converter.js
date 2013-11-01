@@ -34,55 +34,6 @@ function _applyNamespace(s, type, namespace) {
 
 
 
-function hbsHelpers(s) {
-  var matches, handle, handleRegex, regexTriple, re, xx,
-    regex = /{{#(\w+)?[^}]*}}/gim;
-
-  // handle {{#[helper] }}
-  matches = s.match(regex);
-
-  if(matches) {
-    // extract helper handle
-    handle = matches[0].replace('{{#', '');
-    handle = handle.substr(0, handle.indexOf(' '));
-
-    if(helperWhitelist.indexOf(handle) > -1) {
-      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
-      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
-      s = s.replace(handleRegex, '</@helper.' + handle + '>');
-    }
-  }
-
-  // handle other syntax
-  matches = s.match(/{{{([^}]+)}}}/gim);
-  
-  if(matches) {
-    for(var i=0, n=matches.length; i<n; i++) {
-      handle = matches[i].replace(/[{}]/gim, '');
-
-      if(handle.indexOf(' ') > -1) {
-        xx = handle.split(' ');
-
-        handle = xx[0];
-
-        if(helperWhitelist.indexOf(handle.trim()) > -1) {
-          handle = handle.substr(0, handle.indexOf(' '));
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-          regexTriple = new RegExp(re, 'gim');
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
-        }
-      }
-    }
-  }
-
-  return s;
-}
-
-
-
-
-
-
 /*******************************************************************************
  **** scope changing block converters                                       ****
  *******************************************************************************/
@@ -192,23 +143,11 @@ function _convertOneEachBlock(s, namespace) {
 
       innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
-      // // search text inbetween {{#each}} for <#list [var] as ...> and apply current scopeNamespace
-      // innerEach = _applyNamespace(innerEach, 'list', scopeNamespace);
-
-      // // handle simple variable assignments
-      // innerEach = hbsTokens(innerEach, scopeNamespace);
-
-      // // handle if clauses with scope
-      // innerEach = hbsIf(innerEach, scopeNamespace);
-      // innerEach = hbsEq(innerEach, scopeNamespace);
-
       newEach += innerEach;
       newEach += '</#list>';
     }
 
     s = [ beforeEach, newEach, afterEach ].join('');
-// console.log('\n\n\n-------------------------------')
-// console.log(s);
   }
 
   return s;
@@ -228,14 +167,17 @@ function _convertOneEachBlock(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1?? && ' + namespace + '$1>');
-  // console.log(s.match(/{{#if ([\w\.]+[^}])}}/gim));
-
-  // s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if (' + namespace + '$1)?has_content>');
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if ' + namespace + '$1??>');
+  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if (' + namespace + '$1)??>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
+  return s;
+}
+
+function hbsUnless(s, namespace) {
+  namespace = normalizeNamespace(namespace);
+  s = s.replace(/{{#unless ([\w\.]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
+  s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
 
@@ -257,9 +199,67 @@ function hbsEq(s, namespace) {
   return s;
 }
 
+function hbsHelpers(s) {
+  var matches, handle, handleRegex, regexTriple, re, xx,
+    regex = /{{#(\w+)?[^}]*}}/gim;
+
+  // handle {{#[helper] }}
+  matches = s.match(regex);
+
+  if(matches) {
+    // extract helper handle
+    handle = matches[0].replace('{{#', '');
+    handle = handle.substr(0, handle.indexOf(' '));
+
+    if(helperWhitelist.indexOf(handle) > -1) {
+      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
+      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
+      s = s.replace(handleRegex, '</@helper.' + handle + '>');
+    }
+  }
+
+  // handle other syntax
+  matches = s.match(/{{{([^}]+)}}}/gim);
+  
+  if(matches) {
+    console.log(matches);
+
+    for(var i=0, n=matches.length; i<n; i++) {
+      handle = matches[i].replace(/[{}]/gim, '');
+
+      if(handle.indexOf(' ') > -1) {
+        xx = handle.split(' ');
+
+        handle = xx[0];
+
+        if(helperWhitelist.indexOf(handle.trim()) > -1) {
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          regexTriple = new RegExp(re, 'gim');
+          s = s.replace(regexTriple, '<@helper.$1$2/>');
+// console.log('--'+ handle+ '--');
+        }
+      }
+    }
+  }
+
+  return s;
+}
+
+function hbsNoEscape(s, namespace) {
+  namespace = normalizeNamespace(namespace);
+  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${' + namespace + '$1!""?html}');
+  return s;
+}
+
 function hbsTokens(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
+  // donotespace hbs token substitution - confused with hbsHelper syntax - seriously, WTF
+  // @hbsNoEscape
+  //s = s.replace(/{{{([a-z0-9_\-\.]+)}}}/gim, '${' + namespace + '$1!""}');
+  s = hbsNoEscape(s, namespace);
+
+  // standard HBS token substition
   s = s.replace(/{{([ a-z0-9_\-\.]+)}}/gim, '${' + namespace + '$1!""}');
 
   // silly
@@ -283,7 +283,10 @@ module.exports = {
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,
   hbsHelpers      : hbsHelpers,
+  hbsIf           : hbsIf,
+  hbsNoEscape     : hbsNoEscape,
   hbsTokens       : hbsTokens,
+  hbsUnless       : hbsUnless,
   hbsWith         : hbsWith,
 
   injectMacroHandle: function(s, name) {
@@ -299,7 +302,6 @@ module.exports = {
     return s.replace(/{{!(.*)}}/gim, '<#-- $1 -->');
   },
 
-  hbsIf : hbsIf,
 
   hbsExplicitLayout : function(s) {
     var layout, regex = /{{!< (\w+)}}/gim;
@@ -314,10 +316,6 @@ module.exports = {
     return s;
   },
 
-  hbsNoEscape : function(s) {
-    s = s.replace(/{{{([a-z0-9_\.])}}}/gim, '${$1?html}');
-    return s;
-  },
 
   hbsIncludes : function(s) {
     return s.replace(/{{> (.*)}}/gim, '<#include "/$1.ftl" />');
@@ -331,13 +329,6 @@ module.exports = {
     //{{#default 'US' country}}{{/default}}
     s = s.replace(/{{\/default}}/gim, '');
     s = s.replace(/{{#default [\'\"]+([\w\d]+)[\"\']+ ([\w\d]+)}}/gim, '${$2!"$1"}');
-    return s;
-  },
-
-  hbsUnless : function(s) {
-    // s = s.replace(/{{#unless ([a-z\.\!]+)}}/gim, '<#if !$1??>');
-    s = s.replace(/{{#unless ([\w\.]+[^}])}}/gim, '<#if !$1??>');
-    s = s.replace(/{{\/unless}}/gim, '</#if>');
     return s;
   },
 
