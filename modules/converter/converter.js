@@ -69,12 +69,12 @@ function _convertNth(s, type, match) {
 }
 
 function _applyScopingConversion(s, namespace) {
-  s = hbsHelpers(s);
-  s = _applyNamespace(s, 'macro', namespace);
-  s = hbsTokens(s, namespace);
+  // s = hbsHelpers(s);
+  // s = _applyNamespace(s, 'macro', namespace);
+  // s = hbsTokens(s, namespace);
 // console.log('--------------\n', s, '--------------');
-  s = hbsIf(s, namespace);
-  s = hbsEq(s, namespace);
+  // s = hbsIf(s, namespace);
+  // s = hbsEq(s, namespace);
 
   return s;
 }
@@ -211,11 +211,11 @@ function hbsHelpers(s) {
     handle = matches[0].replace('{{#', '');
     handle = handle.substr(0, handle.indexOf(' '));
 
-    if(helperWhitelist.indexOf(handle) > -1) {
+    // if(helperWhitelist.indexOf(handle) > -1) {
       handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
       s = s.replace(handleRegex, '</@helper.' + handle + '>');
-    }
+    // }
   }
 
   // handle other syntax
@@ -225,19 +225,19 @@ function hbsHelpers(s) {
     console.log(matches);
 
     for(var i=0, n=matches.length; i<n; i++) {
-      handle = matches[i].replace(/[{}]/gim, '');
+      handle = matches[i].replace(/[{}]*/gim, '');
 
       if(handle.indexOf(' ') > -1) {
         xx = handle.split(' ');
 
         handle = xx[0];
 
-        if(helperWhitelist.indexOf(handle.trim()) > -1) {
+        // if(helperWhitelist.indexOf(handle.trim()) > -1) {
           re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
           regexTriple = new RegExp(re, 'gim');
           s = s.replace(regexTriple, '<@helper.$1$2/>');
 // console.log('--'+ handle+ '--');
-        }
+        // }
       }
     }
   }
