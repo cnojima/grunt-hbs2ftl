@@ -167,7 +167,7 @@ function _convertOneEachBlock(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.]+[^}])}}/gim, '<#if (' + namespace + '$1)??>');
+  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, '<#if (' + namespace + '$1)??>');
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -176,7 +176,7 @@ function hbsIf(s, namespace) {
 
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{#unless ([\w\.]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
+  s = s.replace(/{{#unless ([\w\.\?q]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
   s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
@@ -211,11 +211,11 @@ function hbsHelpers(s) {
     handle = matches[0].replace('{{#', '');
     handle = handle.substr(0, handle.indexOf(' '));
 
-    // if(helperWhitelist.indexOf(handle) > -1) {
+    if(helperWhitelist.indexOf(handle) > -1) {
       handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
       s = s.replace(handleRegex, '</@helper.' + handle + '>');
-    // }
+    }
   }
 
   // handle other syntax
