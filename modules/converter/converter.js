@@ -280,9 +280,9 @@ function hbsTokens(s, namespace) {
  * convert hbs' .length to ftl's .size
  */
 function hbsSize(s) {
-  var regex = /{{([a-z0-9\.#{]+)\.length([^}]*)}}/gim;
+  var regex = /{{([\sa-z0-9\.#{]+)\.length([^}]*)}}/gim;
 
-  s.replace(regex, '{{$1?size$2}}');
+  s = s.replace(regex, '{{$1?size$2}}');
   return s;
 }
 
