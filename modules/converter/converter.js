@@ -282,7 +282,7 @@ function hbsTokens(s, namespace) {
 function hbsSize(s) {
   var regex = /{{([a-z0-9\.#{]+)\.length([^}]*)}}/gim;
 
-  s.replace(regex, '{{$1.size$2}}');
+  s.replace(regex, '{{$1?size$2}}');
   return s;
 }
 
