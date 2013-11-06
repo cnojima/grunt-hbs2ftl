@@ -276,6 +276,15 @@ function hbsTokens(s, namespace) {
   return s;
 }
 
+/** 
+ * convert hbs' .length to ftl's .size
+ */
+function hbsSize(s) {
+  var regex = /{{([a-z0-9\.#{]+)\.length([^}]*)}}/gim;
+
+  s.replace(regex, '{{$1.size$2}}');
+  return s;
+}
 
 
 
@@ -285,6 +294,7 @@ module.exports = {
   hbsHelpers      : hbsHelpers,
   hbsIf           : hbsIf,
   hbsNoEscape     : hbsNoEscape,
+  hbsSize         : hbsSize,
   hbsTokens       : hbsTokens,
   hbsUnless       : hbsUnless,
   hbsWith         : hbsWith,

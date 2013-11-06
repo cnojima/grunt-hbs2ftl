@@ -35,6 +35,9 @@ module.exports = function(grunt) {
 
       fp = fp.substr(fp.lastIndexOf('/') + 1, (fp.indexOf('.hbs') - fp.lastIndexOf('/') - 1));
 
+      // convert length to size
+      src = convert.hbsSize(src);
+
       // convert blocks
       src = convert.hbsBlocks(src);
 

@@ -30,9 +30,11 @@ module.exports = function(grunt) {
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
+      // convert length to size
+      src = convert.hbsSize(src);
+
       // convert contentFor
       src = convert.hbsContentFor(src);
-
 
       // convert blocks
       src = convert.hbsBlocks(src);

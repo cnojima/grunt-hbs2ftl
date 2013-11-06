@@ -67,3 +67,4 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 0.1.14 handling of embedded {{#each}}'s as well as peer {{#each}}'s at all depths.
 0.1.16 handling {{#with}} changing execution scope context in freemarker
 0.1.18 much better handling of helpers
+0.1.19 converting hbs' .length to ftl's .size
