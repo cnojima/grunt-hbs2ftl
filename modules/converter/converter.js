@@ -174,10 +174,9 @@ function injectMacroHandle(s, name) {
  **** atomic {{#foo}} handlers                                              ****
  *******************************************************************************/
 function _getIfToken(namespace, op) {
-  var convertedIf = [
+  var jsIf = [
     '<#if ',
-    '(', namespace, '$1)?? && \n',
-    '(', namespace, '$1)?has_content \n',
+    '(', namespace, '$1)?? && ', '(', namespace, '$1)?has_content \n',
     '&& \n(',
       // booleans
       '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
@@ -187,12 +186,26 @@ function _getIfToken(namespace, op) {
       '( ', namespace, '$1?is_string && ', namespace, '$1 != "" )\n',
     ')', // end type + value checks
     '>\n'
-  ].join('');
-  
+  ].join(''),
+
+  invertedIf = [
+    '<#if ',
+    '(', namespace, '$1)?? && ', '(', namespace, '$1)?has_content \n',
+    '&& \n(',
+      // booleans
+      '( ', namespace, '$1?is_boolean && ', namespace, '$1 != true ) || \n',
+      // sequences
+      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size < 1 ) || \n',
+      // strings
+      '( ', namespace, '$1?is_string && ', namespace, '$1 == "" )\n',
+    ')', // end type + value checks
+    '>\n'
+  ].join(''),
+
   /**
    * Template for <#if> directives
    */
-  var ifToken = [
+  ifToken = [
     '<#if ',
     '(', namespace, '$1)?? && \n',
     '(', namespace, '$1)?has_content \n',
@@ -208,9 +221,13 @@ function _getIfToken(namespace, op) {
   ].join('');  
 
   if(op) {
-    return ifToken.replace(/::OPERATOR::/gm, op);
+    if(op == 'unless') {
+      return invertedIf;
+    } else {
+      return ifToken.replace(/::OPERATOR::/gm, op);
+    }
   } else {
-    return convertedIf;
+    return jsIf;
   }
 }
 
@@ -227,7 +244,7 @@ function hbsIf(s, namespace) {
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace));
+  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace, 'unless'));
   s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
@@ -235,22 +252,18 @@ function hbsUnless(s, namespace) {
 function hbsEq(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  // s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 == $2>');
   s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '=='));
   s = s.replace(/{{\/eq}}/gim, '</#if>');
 
-  // s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 != $2>');
   s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '!='));
   s = s.replace(/{{\/ne}}/gim, '</#if>');
 
-  // s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
   s = s.replace(/{{#lte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<='));
   s = s.replace(/{{\/lte}}/gim, '</#if>');
 
   s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<'));
   s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-  // s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
   s = s.replace(/{{#gte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '&gt;='));
   s = s.replace(/{{\/gte}}/gim, '</#if>');
 
