@@ -73,6 +73,9 @@ module.exports = function(grunt) {
       // handle html literals - also in hbstokens for namespacing
       src = convert.hbsNoEscape(src); 
 
+      // handle {{#join }}
+      src = convert.hbsJoin(src);
+
       // convert handlebars helpers in user-directives
       src = convert.hbsHelpers(src); // must be run AFTER convert.hbsBlocks()
 

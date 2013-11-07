@@ -288,11 +288,25 @@ function hbsSize(s) {
 
 
 
+/**
+ * convert {{#join [a,b,c] }} to 
+ */
+function hbsJoin(s) {
+  var re = /{{#join ([a-z0-9\.]+)}}/gim;
+
+  s = s.replace(re, '${$1?join(",")}');
+  s = s.replace('{{/join}}', '');
+  return s;
+}
+
+
+
 module.exports = {
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,
   hbsHelpers      : hbsHelpers,
   hbsIf           : hbsIf,
+  hbsJoin         : hbsJoin,
   hbsNoEscape     : hbsNoEscape,
   hbsSize         : hbsSize,
   hbsTokens       : hbsTokens,
