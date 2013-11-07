@@ -69,12 +69,12 @@ function _convertNth(s, type, match) {
 }
 
 function _applyScopingConversion(s, namespace) {
-  // s = hbsHelpers(s);
-  // s = _applyNamespace(s, 'macro', namespace);
-  // s = hbsTokens(s, namespace);
-// console.log('--------------\n', s, '--------------');
-  // s = hbsIf(s, namespace);
-  // s = hbsEq(s, namespace);
+//   s = hbsHelpers(s);
+//   s = _applyNamespace(s, 'macro', namespace);
+//   s = hbsTokens(s, namespace);
+// // console.log('--------------\n', s, '--------------');
+//   s = hbsIf(s, namespace);
+//   s = hbsEq(s, namespace);
 
   return s;
 }
@@ -154,8 +154,18 @@ function _convertOneEachBlock(s, namespace) {
 }
 
 
-
-
+/**
+ * inserts ftl markup for macros
+ * @param {String} s HBS template markup
+ * @param {String} name Macro identifier
+ */
+function injectMacroHandle(s, name) {
+  return [
+    '<#macro ', name, '>\n',
+    s, "\n",
+    '</#macro>'
+  ].join('')
+}
 
 
 
@@ -167,7 +177,21 @@ function _convertOneEachBlock(s, namespace) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, '<#if (' + namespace + '$1)??>');
+  var convertedIf = [
+    '<#if ',
+    '(', namespace, '$1)?has_content',
+    '&& (',
+      // booleans
+      '( ', namespace, '$1?is_boolean && $1 == true ) || ',
+      // sequences
+      '( ', namespace, '$1?is_sequence && $1?size &gt; 0 ) || ',
+      // strings
+      '( ', namespace, '$1?is_string && $1 != "" )',
+    ')', // end type + value checks
+    '>'
+  ].join('');
+
+  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, convertedIf);
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -176,7 +200,7 @@ function hbsIf(s, namespace) {
 
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{#unless ([\w\.\?q]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
+  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
   s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
@@ -199,6 +223,21 @@ function hbsEq(s, namespace) {
   return s;
 }
 
+/**
+ * converts HBS comments into FTL comments
+ * @param {String} s HBS template markup
+ * @return {String}
+ */
+function hbsComments(s) {
+  return s.replace(/{{!(.*)}}/gim, '<#-- $1 -->');
+}
+
+/**
+ * converts HBS helpers into FTL custom directives 
+ * (usually backed by a Java class implementing TemplateModelDirective)
+ * @param {String} s HBS template markup
+ * @return {String}
+ */
 function hbsHelpers(s) {
   var matches, handle, handleRegex, regexTriple, re, xx,
     regex = /{{#(\w+)?[^}]*}}/gim;
@@ -260,7 +299,7 @@ function hbsTokens(s, namespace) {
   s = hbsNoEscape(s, namespace);
 
   // standard HBS token substition
-  s = s.replace(/{{([ a-z0-9_\-\.]+)}}/gim, '${' + namespace + '$1!""}');
+  s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${' + namespace + '$1!""}');
 
   // silly
   s = s.replace('.this!""}', '}');
@@ -289,6 +328,7 @@ function hbsSize(s) {
 
 
 module.exports = {
+  hbsComments     : hbsComments,
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,
   hbsHelpers      : hbsHelpers,
@@ -298,19 +338,8 @@ module.exports = {
   hbsTokens       : hbsTokens,
   hbsUnless       : hbsUnless,
   hbsWith         : hbsWith,
+  injectMacroHandle: injectMacroHandle,
 
-  injectMacroHandle: function(s, name) {
-    return [
-      '<#macro ', name, '>\n',
-      s,
-      "\n",
-      '</#macro>'
-    ].join('')
-  },
-
-  hbsComments : function(s) {
-    return s.replace(/{{!(.*)}}/gim, '<#-- $1 -->');
-  },
 
 
   hbsExplicitLayout : function(s) {
