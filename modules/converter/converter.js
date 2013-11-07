@@ -69,12 +69,12 @@ function _convertNth(s, type, match) {
 }
 
 function _applyScopingConversion(s, namespace) {
-//   s = hbsHelpers(s);
-//   s = _applyNamespace(s, 'macro', namespace);
-//   s = hbsTokens(s, namespace);
-// // console.log('--------------\n', s, '--------------');
-//   s = hbsIf(s, namespace);
-//   s = hbsEq(s, namespace);
+  s = hbsHelpers(s);
+  s = _applyNamespace(s, 'macro', namespace);
+  s = hbsTokens(s, namespace);
+  s = hbsIf(s, namespace);
+  s = hbsUnless(s, namespace);
+  s = hbsEq(s, namespace);
 
   return s;
 }
@@ -141,7 +141,7 @@ function _convertOneEachBlock(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
-      innerEach = _applyScopingConversion(innerEach, scopeNamespace);
+      //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
       newEach += innerEach;
       newEach += '</#list>';
@@ -173,25 +173,51 @@ function injectMacroHandle(s, name) {
 /*******************************************************************************
  **** atomic {{#foo}} handlers                                              ****
  *******************************************************************************/
+function _getIfToken(namespace, op) {
+  var convertedIf = [
+    '<#if ',
+    '(', namespace, '$1)?? && \n',
+    '(', namespace, '$1)?has_content \n',
+    '&& \n(',
+      // booleans
+      '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
+      // sequences
+      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size &gt; 0 ) || \n',
+      // strings
+      '( ', namespace, '$1?is_string && ', namespace, '$1 != "" )\n',
+    ')', // end type + value checks
+    '>\n'
+  ].join('');
+  
+  /**
+   * Template for <#if> directives
+   */
+  var ifToken = [
+    '<#if ',
+    '(', namespace, '$1)?? && \n',
+    '(', namespace, '$1)?has_content \n',
+    '&& \n(',
+      // booleans
+      '( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
+      // sequences
+      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
+      // strings
+      '( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
+    ')', // end type + value checks
+    '>\n'
+  ].join('');  
+
+  if(op) {
+    return ifToken.replace(/::OPERATOR::/gm, op);
+  } else {
+    return convertedIf;
+  }
+}
 
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  var convertedIf = [
-    '<#if ',
-    '(', namespace, '$1)?has_content',
-    '&& (',
-      // booleans
-      '( ', namespace, '$1?is_boolean && $1 == true ) || ',
-      // sequences
-      '( ', namespace, '$1?is_sequence && $1?size &gt; 0 ) || ',
-      // strings
-      '( ', namespace, '$1?is_string && $1 != "" )',
-    ')', // end type + value checks
-    '>'
-  ].join('');
-
-  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, convertedIf);
+  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace));
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -200,24 +226,35 @@ function hbsIf(s, namespace) {
 
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, '<#if !(' + namespace + '$1)??>');
+
+  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace));
   s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
 
 function hbsEq(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  
-  s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 == $2>');
+
+  // s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 == $2>');
+  s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '=='));
   s = s.replace(/{{\/eq}}/gim, '</#if>');
 
-  s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 != $2>');
+  // s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 != $2>');
+  s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '!='));
   s = s.replace(/{{\/ne}}/gim, '</#if>');
 
-  s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
+  // s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 < $2>');
+  s = s.replace(/{{#lte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<='));
+  s = s.replace(/{{\/lte}}/gim, '</#if>');
+
+  s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<'));
   s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
+  // s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, '<#if ' + namespace + '$1 > $2>');
+  s = s.replace(/{{#gte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '&gt;='));
+  s = s.replace(/{{\/gte}}/gim, '</#if>');
+
+  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '&gt;'));
   s = s.replace(/{{\/gt}}/gim, '</#if>');
 
   return s;
