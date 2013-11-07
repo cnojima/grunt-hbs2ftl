@@ -180,10 +180,14 @@ function _getIfToken(namespace, op) {
     '&& \n(',
       // booleans
       '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
+      // integers
+      '( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || \n',
+      // hash
+      '( ', namespace, '$1?is_hash) || \n', // ?has_content takes care of this
       // sequences
-      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size &gt; 0 ) || \n',
+      '( ', namespace, '$1?is_sequence) || \n', // ?has_content takes care of this
       // strings
-      '( ', namespace, '$1?is_string && ', namespace, '$1 != "" )\n',
+      '( ', namespace, '$1?is_string)\n', // ?has_content takes care of this
     ')', // end type + value checks
     '>\n'
   ].join(''),
@@ -195,9 +199,9 @@ function _getIfToken(namespace, op) {
       // booleans
       '( ', namespace, '$1?is_boolean && ', namespace, '$1 != true ) || \n',
       // sequences
-      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size < 1 ) || \n',
+      '( ', namespace, '$1?is_sequence ) || \n', // ?has_content takes care of this
       // strings
-      '( ', namespace, '$1?is_string && ', namespace, '$1 == "" )\n',
+      '( ', namespace, '$1?is_string )\n', // ?has_content takes care of this
     ')', // end type + value checks
     '>\n'
   ].join(''),
@@ -205,32 +209,40 @@ function _getIfToken(namespace, op) {
   /**
    * Template for <#if> directives
    */
-  ifToken = [
+  comparisons = [
     '<#if ',
-    '(', namespace, '$1)?? && \n',
-    '(', namespace, '$1)?has_content \n',
-    '&& \n(',
-      // booleans
-      '( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
-      // sequences
-      '( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
-      // strings
-      '( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
-    ')', // end type + value checks
+    '(', namespace, '$1)?? && (', namespace, '$1)?has_content \n',
+    // '&& (\n',
+    //   // booleans
+    //   '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
+    //   // sequences
+    //   '  ( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
+    //   // strings
+    //   '  ( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
+    // ')\n ', // end type + value checks
+    '&& (', namespace, '$1 ::OPERATOR:: $2 )\n',
     '>\n'
   ].join('');  
 
   if(op) {
     if(op == 'unless') {
+      // {{#unless}}
       return invertedIf;
     } else {
-      return ifToken.replace(/::OPERATOR::/gm, op);
+      // {{#[eq|ne|gt|lt|gte|lte]}}
+      return comparisons.replace(/::OPERATOR::/gm, op);
     }
   } else {
+    // {{#if}}
     return jsIf;
   }
 }
 
+/**
+ * handlebars {{#if}} only resolves single argument in the JS-truthiness manner
+ * @param {String} s HBS template markup
+ * @return {String}
+ */
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
@@ -241,6 +253,11 @@ function hbsIf(s, namespace) {
   return s;
 }
 
+/**
+ * handlebars {{#unless}} only resolves single argument in an inverted JS-truthiness manner
+ * @param {String} s HBS template markup
+ * @return {String}
+ */
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
