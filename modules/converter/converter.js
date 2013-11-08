@@ -95,7 +95,7 @@ function _convertOneWithBlock(s) {
     // console.log(matches[0], matches[1]);
     handle = matches[1].replace('.', '_');
 
-    s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' />');
+    s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' >');
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1] + '/>');
     s = _applyScopingConversion(s, handle);
   }
