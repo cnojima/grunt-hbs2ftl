@@ -24,7 +24,7 @@ function _applyNamespace(s, type, namespace) {
   var ftlTag = '<#' + type + ' ([\\w]+) as ([\\w]+)>',
     re = new RegExp(ftlTag, 'gim');
 
-  return s.replace(re, '<#' + type + ' ' + namespace + '.$1 as $2>');
+  return s.replace(re, '<#' + type + ' (' + namespace + '.$1)![] as $2>');
 }
 
 
@@ -88,12 +88,27 @@ function hbsWith(s) {
 }
 
 function _convertOneWithBlock(s) {
+  var matches, handle,
+    re = /{{#with\ ([\w\.]+)}}/gi;
+
+  while(matches = re.exec(s)) {
+    // console.log(matches[0], matches[1]);
+    handle = matches[1].replace('.', '_');
+
+    s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' />');
+    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1] + '/>');
+    s = _applyScopingConversion(s, handle);
+  }
+
+  return s;
+}
+
+function _convertOneWithBlock_v1(s) {
   var handle = s.match(/{{#with\ [\w\.]+}}/im)[0];
 
   if(handle) {
     handle = handle.substr(8);
     handle = handle.substr(0, handle.length - 2);
-
 
     s = s.replace(/{{#with (.*)}}/gim, '<#macro with_$1 $1>');
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + handle + '/>');
@@ -137,7 +152,7 @@ function _convertOneEachBlock(s, namespace) {
 
     if(matches) {
       scopeNamespace = 'i_' + matches[1].replace('.', '_');
-      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      newEach = [ '<#list (', namespace, matches[1], ')![] as ', scopeNamespace, '>' ].join(''); // prefix innerEach
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
@@ -160,6 +175,8 @@ function _convertOneEachBlock(s, namespace) {
  * @param {String} name Macro identifier
  */
 function injectMacroHandle(s, name) {
+  // dot-notation breaks FTL parsing
+  name = name.replace('.', '_');
   return [
     '<#macro ', name, '>\n',
     s, "\n",
@@ -328,7 +345,7 @@ function hbsHelpers(s) {
   matches = s.match(/{{{([^}]+)}}}/gim);
   
   if(matches) {
-    console.log(matches);
+    // console.log(matches);
 
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]*/gim, '');
