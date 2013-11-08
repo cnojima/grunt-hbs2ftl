@@ -383,7 +383,26 @@ function hbsTokens(s, namespace) {
   s = hbsNoEscape(s, namespace);
 
   // standard HBS token substition
-  s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${' + namespace + '$1!""}');
+  // s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${(' + namespace + '$1?c)!""?string}');
+  var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s]+)}}/gi;
+
+  while(matches = tokenRe.exec(s)) {
+    // console.log(matches[0], matches[1]);
+    exToken = matches[1].split('.');
+
+    token = matches[1];
+    if(exToken.length > 1) {
+      token = exToken.pop();
+      // console.log(token.substr(0, 2));
+    }
+
+    // hacky workaround bools
+    if(token.substr(0, 2) == 'is') {
+      s = s.replace(matches[0], '${' + namespace + matches[1] + '?c!""}');
+    } else {
+      s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
+    }
+  }
 
   // silly
   s = s.replace('.this!""}', '}');
