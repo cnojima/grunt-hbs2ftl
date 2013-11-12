@@ -323,7 +323,7 @@ function hbsComments(s) {
  * @return {String}
  */
 function hbsHelpers(s) {
-  var matches, handle, handleRegex, regexTriple, re, xx,
+  var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
     regex = /{{#(\w+)?[^}]*}}/gim;
 
   // handle {{#[helper] }}
@@ -350,17 +350,33 @@ function hbsHelpers(s) {
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]*/gim, '');
 
+      // make sure we have an experssion, not a HTML-escaper (space in the call)
       if(handle.indexOf(' ') > -1) {
         xx = handle.split(' ');
-
+// console.log(matches[i], '----' +xx[1]);
+        
         handle = xx[0];
+        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+        regexTriple = new RegExp(re, 'gim');
 
-        // if(helperWhitelist.indexOf(handle.trim()) > -1) {
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-          regexTriple = new RegExp(re, 'gim');
+        if(xx[1].trim() !== '') {
+          while(hmatches = regexTriple.exec(s)) {
+            if(hmatches[2].trim().length > 0) {
+              // args for helper backing class
+              newArgs = '';
+              exHmatches = hmatches[2].trim().split(' ');
+
+              for(var i=0, n=exHmatches.length; i<n; i++) {
+                newArgs += [' var', i, '=', exHmatches[i]].join('');
+              }
+
+              xxx = new RegExp(hmatches[0], 'gim');
+              s = s.replace(xxx, '<@helper.handle' + newArgs + '/>');
+            }
+          }
+        } else {
           s = s.replace(regexTriple, '<@helper.$1$2/>');
-// console.log('--'+ handle+ '--');
-        // }
+        }
       }
     }
   }
