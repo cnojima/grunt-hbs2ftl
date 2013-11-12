@@ -89,11 +89,11 @@ function hbsWith(s) {
 
 function _convertOneWithBlock(s) {
   var matches, handle,
-    re = /{{#with\ ([\w\.]+)}}/gi;
+    re = /{{#with\ ([\w\.\d]+)}}/gi;
 
   while(matches = re.exec(s)) {
-    // console.log(matches[0], matches[1]);
-    handle = matches[1].replace('.', '_');
+    console.log(matches[0], matches[1]);
+    handle = matches[1].replace(/\./g, '_');
 
     s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' >');
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1] + '/>');
