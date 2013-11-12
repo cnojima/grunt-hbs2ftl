@@ -92,7 +92,7 @@ function _convertOneWithBlock(s) {
     re = /{{#with\ ([\w\.\d]+)}}/gi;
 
   while(matches = re.exec(s)) {
-    console.log(matches[0], matches[1]);
+    // console.log(matches[0], matches[1]);
     handle = matches[1].replace(/\./g, '_');
 
     s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' >');
@@ -443,7 +443,28 @@ function hbsJoin(s) {
 
 
 
+/**
+ * cleanup handlebars droppings
+ * @param {String} s Template contents
+ * @return {String}
+ */
+function hbsCleanup(s) {
+  // hbs array indice notation to ftl's
+  var tmp, matches,
+    re_dotNot = /<[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>]>/gim;
+
+  while(matches = re_dotNot.exec(s)) {
+    // console.log(matches[0], matches[1]);
+    tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
+    s = s.replace(matches[0], tmp);
+  }
+
+  return s;
+}
+
+
 module.exports = {
+  hbsCleanup      : hbsCleanup,
   hbsComments     : hbsComments,
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,

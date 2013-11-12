@@ -82,11 +82,12 @@ module.exports = function(grunt) {
       // lastly, convert standard hbs tokens into ftl-versions
       src = convert.hbsTokens(src);
 
+      src = convert.hbsCleanup(src);
+
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
       // Print a success message.
       // grunt.log.writeln('File "' + f.dest + '" created.');
-
     });
   });
 };
