@@ -371,7 +371,7 @@ function hbsHelpers(s) {
               }
 
               xxx = new RegExp(hmatches[0], 'gim');
-              s = s.replace(xxx, '<@helper.handle' + newArgs + '/>');
+              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
             }
           }
         } else {
