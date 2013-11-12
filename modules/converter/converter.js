@@ -451,7 +451,7 @@ function hbsJoin(s) {
 function hbsCleanup(s) {
   // hbs array indice notation to ftl's
   var tmp, matches,
-    re_dotNot = /<[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>]>/gim;
+    re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
 
   while(matches = re_dotNot.exec(s)) {
     // console.log(matches[0], matches[1]);
