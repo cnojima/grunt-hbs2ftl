@@ -13,6 +13,15 @@ var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ];
 
+var helperParamMap = {
+  tel_anchor : [],
+  // staticVersion : [],
+  // hbstemplates : [],
+  qtyOption : [
+    'max', 'selected', 'min'
+  ]
+}
+
 
 function normalizeNamespace(n) {
   n = n || '';
@@ -24,7 +33,7 @@ function _applyNamespace(s, type, namespace) {
   var ftlTag = '<#' + type + ' ([\\w]+) as ([\\w]+)>',
     re = new RegExp(ftlTag, 'gim');
 
-  return s.replace(re, '<#' + type + ' (' + namespace + '.$1)![] as $2>');
+  return s.replace(re, '<#' + type + ' ' + namespace + '.$1 as $2>');
 }
 
 
@@ -88,27 +97,12 @@ function hbsWith(s) {
 }
 
 function _convertOneWithBlock(s) {
-  var matches, handle,
-    re = /{{#with\ ([\w\.\d]+)}}/gi;
-
-  while(matches = re.exec(s)) {
-    // console.log(matches[0], matches[1]);
-    handle = matches[1].replace(/\./g, '_');
-
-    s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' >');
-    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1] + '/>');
-    s = _applyScopingConversion(s, handle);
-  }
-
-  return s;
-}
-
-function _convertOneWithBlock_v1(s) {
   var handle = s.match(/{{#with\ [\w\.]+}}/im)[0];
 
   if(handle) {
     handle = handle.substr(8);
     handle = handle.substr(0, handle.length - 2);
+
 
     s = s.replace(/{{#with (.*)}}/gim, '<#macro with_$1 $1>');
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + handle + '/>');
@@ -151,8 +145,8 @@ function _convertOneEachBlock(s, namespace) {
     afterEach = s.substr(eachEndIdx + 9);
 
     if(matches) {
-      scopeNamespace = 'i_' + matches[1].replace(/\./gim, '_');
-      newEach = [ '<#list (', namespace, matches[1], ')![] as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      scopeNamespace = 'i_' + matches[1].replace('.', '_');
+      newEach = [ '<#list ', namespace, matches[1], ' as ', scopeNamespace, '>' ].join(''); // prefix innerEach
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
@@ -175,8 +169,6 @@ function _convertOneEachBlock(s, namespace) {
  * @param {String} name Macro identifier
  */
 function injectMacroHandle(s, name) {
-  // dot-notation breaks FTL parsing
-  name = name.replace('.', '_');
   return [
     '<#macro ', name, '>\n',
     s, "\n",
@@ -227,18 +219,7 @@ function _getIfToken(namespace, op) {
    * Template for <#if> directives
    */
   comparisons = [
-    '<#if ',
-    '(', namespace, '$1)?? && (', namespace, '$1)?has_content \n',
-    // '&& (\n',
-    //   // booleans
-    //   '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
-    //   // sequences
-    //   '  ( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
-    //   // strings
-    //   '  ( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
-    // ')\n ', // end type + value checks
-    '&& (', namespace, '$1 ::OPERATOR:: $2 )\n',
-    '>\n'
+    '<#if (', namespace, '$1)?? && (', namespace, '$1)?has_content && (', namespace, '$1 ::OPERATOR:: $2 )>'
   ].join('');  
 
   if(op) {
@@ -323,8 +304,9 @@ function hbsComments(s) {
  * @return {String}
  */
 function hbsHelpers(s) {
-  var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
-    regex = /{{#(\w+)?[^}]*}}/gim;
+  var args, matches, handle, handleRegex, regexTriple, re, xx,
+    regex = /{{#(\w+)?[^}]*}}/gim,
+    reHelper = /<@helper\.([a-z0-9_]+)([a-z0-9_\.\'\"\s]*)([\/>]+)/gim;
 
   // handle {{#[helper] }}
   matches = s.match(regex);
@@ -336,7 +318,7 @@ function hbsHelpers(s) {
 
     if(helperWhitelist.indexOf(handle) > -1) {
       handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
-      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
+      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2 >');
       s = s.replace(handleRegex, '</@helper.' + handle + '>');
     }
   }
@@ -350,34 +332,38 @@ function hbsHelpers(s) {
     for(var i=0, n=matches.length; i<n; i++) {
       handle = matches[i].replace(/[{}]*/gim, '');
 
-      // make sure we have an experssion, not a HTML-escaper (space in the call)
       if(handle.indexOf(' ') > -1) {
         xx = handle.split(' ');
-// console.log(matches[i], '----' +xx[1]);
-        
+
         handle = xx[0];
         re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
         regexTriple = new RegExp(re, 'gim');
-
-        if(xx[1].trim() !== '') {
-          while(hmatches = regexTriple.exec(s)) {
-            if(hmatches[2].trim().length > 0) {
-              // args for helper backing class
-              newArgs = '';
-              exHmatches = hmatches[2].trim().split(' ');
-
-              for(var i=0, n=exHmatches.length; i<n; i++) {
-                newArgs += [' var', i, '=', exHmatches[i]].join('');
-              }
-
-              xxx = new RegExp(hmatches[0], 'gim');
-              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
-            }
-          }
-        } else {
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
-        }
+        s = s.replace(regexTriple, '<@helper.$1$2 />');
       }
+    }
+  }
+
+  // param map for args
+  var i, n, exArgs, helperArgs, closer;
+  while(matches = reHelper.exec(s)) {
+    // console.log('\n\nleng:' + matches.length);
+    // console.log(matches[0]);
+    // console.log(handle);
+    // console.log(matches[3]);
+    // console.log(args);
+
+    handle = matches[1].trim();
+    args = matches[2].trim();
+    closer = matches[3];
+
+    if(typeof helperParamMap[handle] != 'undefined') {
+      exArgs = args.split(' '), helperArgs = '';
+      
+      for(i=0, n=exArgs.length; i<n; i++) {
+        helperArgs += ' var' + i + '=' + exArgs[i];
+      }
+
+      s = s.replace(matches[0], '<@helper.' + handle + helperArgs + ' ' + closer);
     }
   }
 
@@ -399,26 +385,7 @@ function hbsTokens(s, namespace) {
   s = hbsNoEscape(s, namespace);
 
   // standard HBS token substition
-  // s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${(' + namespace + '$1?c)!""?string}');
-  var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s]+)}}/gi;
-
-  while(matches = tokenRe.exec(s)) {
-    // console.log(matches[0], matches[1]);
-    exToken = matches[1].split('.');
-
-    token = matches[1];
-    if(exToken.length > 1) {
-      token = exToken.pop();
-      // console.log(token.substr(0, 2));
-    }
-
-    // hacky workaround bools
-    if(token.substr(0, 2) == 'is') {
-      s = s.replace(matches[0], '${' + namespace + matches[1] + '?c!""}');
-    } else {
-      s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
-    }
-  }
+  s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${' + namespace + '$1!""}');
 
   // silly
   s = s.replace('.this!""}', '}');
@@ -459,28 +426,7 @@ function hbsJoin(s) {
 
 
 
-/**
- * cleanup handlebars droppings
- * @param {String} s Template contents
- * @return {String}
- */
-function hbsCleanup(s) {
-  // hbs array indice notation to ftl's
-  var tmp, matches,
-    re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
-
-  while(matches = re_dotNot.exec(s)) {
-    // console.log(matches[0], matches[1]);
-    tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
-    s = s.replace(matches[0], tmp);
-  }
-
-  return s;
-}
-
-
 module.exports = {
-  hbsCleanup      : hbsCleanup,
   hbsComments     : hbsComments,
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,
