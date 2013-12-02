@@ -210,17 +210,7 @@ function _getIfToken(namespace, op) {
   ].join(''),
 
   invertedIf = [
-    '<#if ',
-    '(', namespace, '$1)?? && ', '(', namespace, '$1)?has_content \n',
-    '&& \n(',
-      // booleans
-      '( ', namespace, '$1?is_boolean && ', namespace, '$1 != true ) || \n',
-      // sequences
-      '( ', namespace, '$1?is_sequence ) || \n', // ?has_content takes care of this
-      // strings
-      '( ', namespace, '$1?is_string )\n', // ?has_content takes care of this
-    ')', // end type + value checks
-    '>\n'
+    '<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content>'
   ].join(''),
 
   /**
