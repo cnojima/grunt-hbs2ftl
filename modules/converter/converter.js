@@ -192,8 +192,8 @@ function injectMacroHandle(s, name) {
  *******************************************************************************/
 function _getIfToken(namespace, op) {
   var jsIf = [
-    '<#if ',
-    '(', namespace, '$1)?? && ', '(', namespace, '$1)?has_content \n',
+    '\n<#if ',
+    '((', namespace, '$1)?? && ', '(', namespace, '$1)?has_content) \n',
     '&& \n(',
       // booleans
       '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
@@ -210,15 +210,17 @@ function _getIfToken(namespace, op) {
   ].join(''),
 
   invertedIf = [
-    '<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content>'
+    '\n<#if !(', namespace, '$1)?? && !(', namespace, '$1)?has_content>\n'
   ].join(''),
+
+  
 
   /**
    * Template for <#if> directives
    */
   comparisons = [
-    '<#if ',
-    '(', namespace, '$1)?? && (', namespace, '$1)?has_content \n',
+    '\n<#if (',
+    '(', namespace, '$1)?? && (', namespace, '$1)?has_content ) \n',
     // '&& (\n',
     //   // booleans
     //   '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
