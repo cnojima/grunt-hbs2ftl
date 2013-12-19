@@ -406,7 +406,8 @@ function hbsTokens(s, namespace) {
 
     // hacky workaround bools
     if(token.substr(0, 2) == 'is') {
-      s = s.replace(matches[0], '${' + namespace + matches[1] + '?c!""}');
+      // make FTL act like hbs - ignore undefineds/nulls
+      s = s.replace(matches[0], '${((' + namespace + matches[1] + ')??)?c!""}');
     } else {
       s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
     }
