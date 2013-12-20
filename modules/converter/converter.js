@@ -156,6 +156,7 @@ function _convertOneEachBlock(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
+innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
       //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
       newEach += innerEach;
