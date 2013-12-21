@@ -69,7 +69,7 @@ function _convertNth(s, type, match) {
 }
 
 function _applyScopingConversion(s, namespace) {
-  s = hbsHelpers(s);
+  s = hbsHelpers(s, namespace);
   s = _applyNamespace(s, 'macro', namespace);
   s = hbsTokens(s, namespace);
   s = hbsIf(s, namespace);
@@ -96,7 +96,7 @@ function _convertOneWithBlock(s) {
     handle = matches[1].replace(/\./g, '_');
 
     s = s.replace(matches[0], '<#macro with_' + handle + ' ' + handle + ' >');
-    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1] + '/>');
+    s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + matches[1].replace(/\.([0-9]){1,}/gim, '[$1]') + '/>');
     s = _applyScopingConversion(s, handle);
   }
 
@@ -313,11 +313,18 @@ function hbsComments(s) {
  * converts HBS helpers into FTL custom directives 
  * (usually backed by a Java class implementing TemplateModelDirective)
  * @param {String} s HBS template markup
+ * @param {String} namespace
  * @return {String}
  */
-function hbsHelpers(s) {
+function hbsHelpers(s, namespace) {
   var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
     regex = /{{#(\w+)?[^}]*}}/gim;
+
+  if(namespace) {
+    namespace = namespace + '.';
+  } else {
+    namespace = '';
+  }
 
   // handle {{#[helper] }}
   matches = s.match(regex);
@@ -360,7 +367,7 @@ function hbsHelpers(s) {
               exHmatches = hmatches[2].trim().split(' ');
 
               for(var i=0, n=exHmatches.length; i<n; i++) {
-                newArgs += [' var', i, '=', exHmatches[i]].join('');
+                newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
               }
 
               xxx = new RegExp(hmatches[0], 'gim');
@@ -462,13 +469,19 @@ function hbsJoin(s) {
 function hbsCleanup(s) {
   // hbs array indice notation to ftl's
   var tmp, matches,
+    re_dotNotFtl = /[<|{]+[#@a-z0-9_\.\-\s]+_([0-9]{1,})_*?[^>\]][>|}]+/gim,
     re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
 
   while(matches = re_dotNot.exec(s)) {
-    // console.log(matches[0], matches[1]);
+    console.log(matches[0], matches[1]);
     tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
     s = s.replace(matches[0], tmp);
   }
+
+  // while(matches = re_dotNotFtl.exec(s)) {
+  //   tmp = matches[0].replace(matches[1], '[' + matches[1] + '].');
+  //   s = s.replace(matches[0], tmp);
+  // }
 
   return s;
 }
