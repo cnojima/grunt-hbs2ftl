@@ -210,7 +210,7 @@ function _getIfToken(namespace, op) {
   ].join(''),
 
   invertedIf = [
-    '\n<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content || ', namespace, '$1 == false>\n'
+    '\n<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content || ( ', namespace, '$1?is_boolean && ', namespace, '$1 == false)>\n'
   ].join(''),
 
   
