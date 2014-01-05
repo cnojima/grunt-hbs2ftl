@@ -194,24 +194,23 @@ function injectMacroHandle(s, name) {
 function _getIfToken(namespace, op) {
   var jsIf = [
     '\n<#if ',
-    '((', namespace, '$1)?? && ', '(', namespace, '$1)?has_content) \n',
-    '&& \n(',
+    '(', namespace, '$1)?has_content && \n(',
       // booleans
-      '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
+      '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
       // integers
-      '( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || \n',
+      '  ( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || \n',
       // hash
-      '( ', namespace, '$1?is_hash) || \n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_hash) || \n', // ?has_content takes care of this
       // sequences
-      '( ', namespace, '$1?is_sequence) || \n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_sequence) || \n', // ?has_content takes care of this
       // strings
-      '( ', namespace, '$1?is_string)\n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_string)\n', // ?has_content takes care of this
     ')', // end type + value checks
     '>\n'
   ].join(''),
 
   invertedIf = [
-    '\n<#if !(', namespace, '$1)?? && !(', namespace, '$1)?has_content>\n'
+    '\n<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content || ', namespace, '$1 == false>\n'
   ].join(''),
 
   
@@ -220,18 +219,7 @@ function _getIfToken(namespace, op) {
    * Template for <#if> directives
    */
   comparisons = [
-    '\n<#if (',
-    '(', namespace, '$1)?? && (', namespace, '$1)?has_content ) \n',
-    // '&& (\n',
-    //   // booleans
-    //   '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
-    //   // sequences
-    //   '  ( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
-    //   // strings
-    //   '  ( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
-    // ')\n ', // end type + value checks
-    '&& (', namespace, '$1 ::OPERATOR:: $2 )\n',
-    '>\n'
+    '\n<#if (', namespace, '$1)?? && (', namespace, '$1)?has_content && ', namespace, '$1 ::OPERATOR:: $2>'
   ].join('');  
 
   if(op) {
