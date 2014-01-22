@@ -11,6 +11,10 @@ var matches = [],
  */
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
+], hasHelperAnalogInFTL = [
+  '#toLowerCase', '#toUpperCase'
+], hasBespokeConversion = [
+  '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
 
 
@@ -159,6 +163,9 @@ function _convertOneEachBlock(s, namespace) {
 innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
       //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
+      // handle {{@index}}
+      innerEach = innerEach.replace(/{{@index}}/gim, '${' + scopeNamespace + '_index}');
+
       newEach += innerEach;
       newEach += '</#list>';
     }
@@ -194,24 +201,23 @@ function injectMacroHandle(s, name) {
 function _getIfToken(namespace, op) {
   var jsIf = [
     '\n<#if ',
-    '((', namespace, '$1)?? && ', '(', namespace, '$1)?has_content) \n',
-    '&& \n(',
+    '(', namespace, '$1)?has_content && \n(',
       // booleans
-      '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
+      '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || \n',
       // integers
-      '( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || \n',
+      '  ( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || \n',
       // hash
-      '( ', namespace, '$1?is_hash) || \n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_hash) || \n', // ?has_content takes care of this
       // sequences
-      '( ', namespace, '$1?is_sequence) || \n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_sequence) || \n', // ?has_content takes care of this
       // strings
-      '( ', namespace, '$1?is_string)\n', // ?has_content takes care of this
+      '  ( ', namespace, '$1?is_string)\n', // ?has_content takes care of this
     ')', // end type + value checks
     '>\n'
   ].join(''),
 
   invertedIf = [
-    '\n<#if !(', namespace, '$1)?? && !(', namespace, '$1)?has_content>\n'
+    '\n<#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content>\n'
   ].join(''),
 
   
@@ -220,18 +226,7 @@ function _getIfToken(namespace, op) {
    * Template for <#if> directives
    */
   comparisons = [
-    '\n<#if (',
-    '(', namespace, '$1)?? && (', namespace, '$1)?has_content ) \n',
-    // '&& (\n',
-    //   // booleans
-    //   '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 ::OPERATOR:: true ) || \n',
-    //   // sequences
-    //   '  ( ', namespace, '$1?is_sequence && ', namespace, '$1?size ::OPERATOR:: 0 ) || \n',
-    //   // strings
-    //   '  ( ', namespace, '$1?is_string && ', namespace, '$1 ::OPERATOR:: "" )\n',
-    // ')\n ', // end type + value checks
-    '&& (', namespace, '$1 ::OPERATOR:: $2 )\n',
-    '>\n'
+    '\n<#if (', namespace, '$1)?? && (', namespace, '$1)?has_content && ', namespace, '$1 ::OPERATOR:: $2>'
   ].join('');  
 
   if(op) {
@@ -328,7 +323,6 @@ function hbsHelpers(s, namespace) {
 
   // handle {{#[helper] }}
   matches = s.match(regex);
-
   if(matches) {
     // extract helper handle
     handle = matches[0].replace('{{#', '');
@@ -342,7 +336,12 @@ function hbsHelpers(s, namespace) {
   }
 
   // handle other syntax
-  matches = s.match(/{{{([^}]+)}}}/gim);
+  var tripsMatches = s.match(/{{{([^}]+)}}}/gim);
+  if(matches) {
+    matches.concat(tripsMatches);
+  } else {
+    matches = tripsMatches;
+  }
   
   if(matches) {
     // console.log(matches);
@@ -356,29 +355,67 @@ function hbsHelpers(s, namespace) {
 // console.log(matches[i], '----' +xx[1]);
         
         handle = xx[0];
-        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-        regexTriple = new RegExp(re, 'gim');
 
-        if(xx[1].trim() !== '') {
-          while(hmatches = regexTriple.exec(s)) {
-            if(hmatches[2].trim().length > 0) {
-              // args for helper backing class
-              newArgs = '';
-              exHmatches = hmatches[2].trim().split(' ');
-
-              for(var i=0, n=exHmatches.length; i<n; i++) {
-                newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
-              }
-
-              xxx = new RegExp(hmatches[0], 'gim');
-              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+// console.log(handle, '-----', matches[i]);
+        if(handle.indexOf('#') > -1) {
+          if(hasBespokeConversion.indexOf(handle) < 0) {
+            // simple FTL analog replacements
+            if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+              s = hbsAnalogFtl(s, handle);
+            } else {
+              console.log('Unhandled HBS helper with handle [ ' + handle + ' ]');
             }
           }
         } else {
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          regexTriple = new RegExp(re, 'gim');
+
+          if(xx[1].trim() !== '') {
+            while(hmatches = regexTriple.exec(s)) {
+              if(hmatches[2].trim().length > 0) {
+                // args for helper backing class
+                newArgs = '';
+                exHmatches = hmatches[2].trim().split(' ');
+
+                for(var i=0, n=exHmatches.length; i<n; i++) {
+                  newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
+                }
+
+                xxx = new RegExp(hmatches[0], 'gim');
+                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+              }
+            }
+          } else {
+            s = s.replace(regexTriple, '<@helper.$1$2/>');
+          }
         }
       }
     }
+  }
+
+  return s;
+}
+
+/**
+ * replaces known-hbs helpers with FTL analogues
+ */
+function hbsAnalogFtl(s, handle) {
+  handle = handle.replace('#', '');
+
+  var analogues = {
+      toLowerCase : '?lower_case',
+      toUpperCase : '?upper_case'
+    }, 
+    context,
+    matches, 
+    re = new RegExp('{{#' + handle + "([a-z0-9_\\-\\.\\s]+)}}", 'gi');
+    // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
+
+  while(matches = re.exec(s)) {
+    context = '${' + matches[1].trim();
+    context += '!""' + analogues[handle] + '}';
+
+    s = s.replace(matches[0], context);
   }
 
   return s;
