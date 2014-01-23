@@ -5,6 +5,19 @@ var matches = [],
   scopeDepth = [];
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * add helper signatures here to help converter differentiate 
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
@@ -12,10 +25,169 @@ var matches = [],
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ], hasHelperAnalogInFTL = [
-  '#toLowerCase', '#toUpperCase'
+  'toLowerCase', 'toUpperCase'
 ], hasBespokeConversion = [
   '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
+
+/**
+ * converts HBS helpers into FTL custom directives 
+ * (usually backed by a Java class implementing TemplateModelDirective)
+ * @param {String} s HBS template markup
+ * @param {String} namespace
+ * @return {String}
+ */
+function hbsHelpers(s, namespace) {
+  var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
+    regex = /{{#(\w+)?[^}]*}}/gim;
+
+  if(namespace) {
+    namespace = namespace + '.';
+  } else {
+    namespace = '';
+  }
+
+  // handle {{#helper }}args{{/helper}} -> <@helper.helper var0=arg0 var1=arg1 />
+  matches = s.match(regex);
+  if(matches) {
+    // extract helper handle
+    handle = matches[0].replace('{{#', '');
+    handle = handle.substr(0, handle.indexOf(' '));
+
+    if(helperWhitelist.indexOf(handle) > -1) {
+      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
+      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2 />');
+      // s = s.replace(handleRegex, '</@helper.' + handle + '>');
+    }
+  }
+
+
+  // handle {{{helper arg0 arg1...}}} -> <@helper.helper var0=arg0 var1=arg1 />
+  matches = s.match(/{{{([^}]+)}}}/gim);
+  
+  if(matches) {
+    // console.log(matches);
+
+    for(var i=0, n=matches.length; i<n; i++) {
+      handle = matches[i].replace(/[{}]*/gim, '');
+
+      // make sure we have an experssion, not a HTML-escaper (space in the call)
+      if(handle.indexOf(' ') > -1) {
+        xx = handle.split(' ');
+// console.log(matches[i], '----' +xx[1]);
+        
+        handle = xx[0];
+
+// console.log(handle, '-----', matches[i]);
+        // if(handle.indexOf('#') > -1) {
+        //   if(hasBespokeConversion.indexOf(handle) < 0) {
+        //     // simple FTL analog replacements
+        //     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+        //       s = hbsAnalogFtl(s, handle);
+        //     } else {
+        //       console.log('Unhandled HBS helper with handle [ ' + handle + ' ]');
+        //     }
+        //   }
+        // } else {
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          regexTriple = new RegExp(re, 'gim');
+
+          if(xx[1].trim() !== '') {
+            while(hmatches = regexTriple.exec(s)) {
+              if(hmatches[2].trim().length > 0) {
+                // args for helper backing class
+                newArgs = '';
+                exHmatches = hmatches[2].trim().split(' ');
+
+                for(var i=0, n=exHmatches.length; i<n; i++) {
+                  newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
+                }
+
+                xxx = new RegExp(hmatches[0], 'gim');
+                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+              }
+            }
+          } else {
+            s = s.replace(regexTriple, '<@helper.$1$2/>');
+          }
+        // }
+      }
+    }
+  }
+
+  // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
+  re = /{{([a-z0-9_\-]+) ([^}]*)}}/gim;
+
+  while(matches = re.exec(s)) {
+    handle = matches[1];
+    args = matches[2].trim().split(' ');
+
+    if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+console.log(handle);
+      // ${arg0!""?analog}
+      s = hbsAnalogFtl(s, handle);
+    } else {
+      // <@helper.helper var0=arg0 var1=arg1 />
+      s = hbsCustomHelper(s, matches[0], namespace, handle, args);
+    }
+  }
+
+  return s;
+}
+
+/**
+ * replaces hbs helper with FTL custom helper
+ * <@helper.helper var0=arg0!"" var1=arg1!"" />
+ * @param {String} s 
+ * @param {String} toReplace Token to replace with converted helper
+ * @param {String} namespace
+ * @param {String} handle Name of custom helper
+ * @param {Array} args
+ */
+function hbsCustomHelper(s, toReplace, namespace, handle, args) {
+  var newHelper = '<@helper.' + handle;
+
+  for(var i=0, n=args.length; i<n; i++) {
+    if(args[i] !== '') {
+      newHelper += ' var' + i + '=' + namespace + args[i] + '!""';
+    }
+  }
+
+  newHelper += ' />';
+// console.log(newHelper);
+  s = s.replace(toReplace, newHelper);
+
+  return s;
+}
+
+/**
+ * replaces known-hbs helpers with FTL analogues
+ */
+function hbsAnalogFtl(s, handle) {
+  handle = handle.replace('#', '');
+
+  var analogues = {
+      toLowerCase : '?lower_case',
+      toUpperCase : '?upper_case'
+    }, 
+    context,
+    matches, 
+    re = new RegExp('{{' + handle + "([a-z0-9_\\-\\.\\s]+)}}", 'gi');
+    // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
+
+  while(matches = re.exec(s)) {
+    context = '${' + matches[1].trim();
+    context += '!""' + analogues[handle] + '}';
+
+    s = s.replace(matches[0], context);
+  }
+
+  return s;
+}
+
+
+
+
 
 
 function normalizeNamespace(n) {
@@ -304,122 +476,31 @@ function hbsComments(s) {
   return s.replace(/{{!(.*)}}/gim, '<#-- $1 -->');
 }
 
-/**
- * converts HBS helpers into FTL custom directives 
- * (usually backed by a Java class implementing TemplateModelDirective)
- * @param {String} s HBS template markup
- * @param {String} namespace
- * @return {String}
- */
-function hbsHelpers(s, namespace) {
-  var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
-    regex = /{{#(\w+)?[^}]*}}/gim;
 
-  if(namespace) {
-    namespace = namespace + '.';
-  } else {
-    namespace = '';
-  }
 
-  // handle {{#[helper] }}
-  matches = s.match(regex);
-  if(matches) {
-    // extract helper handle
-    handle = matches[0].replace('{{#', '');
-    handle = handle.substr(0, handle.indexOf(' '));
 
-    if(helperWhitelist.indexOf(handle) > -1) {
-      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
-      s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2>');
-      s = s.replace(handleRegex, '</@helper.' + handle + '>');
-    }
-  }
 
-  // handle other syntax
-  var tripsMatches = s.match(/{{{([^}]+)}}}/gim);
-  if(matches) {
-    matches.concat(tripsMatches);
-  } else {
-    matches = tripsMatches;
-  }
-  
-  if(matches) {
-    // console.log(matches);
 
-    for(var i=0, n=matches.length; i<n; i++) {
-      handle = matches[i].replace(/[{}]*/gim, '');
 
-      // make sure we have an experssion, not a HTML-escaper (space in the call)
-      if(handle.indexOf(' ') > -1) {
-        xx = handle.split(' ');
-// console.log(matches[i], '----' +xx[1]);
-        
-        handle = xx[0];
 
-// console.log(handle, '-----', matches[i]);
-        if(handle.indexOf('#') > -1) {
-          if(hasBespokeConversion.indexOf(handle) < 0) {
-            // simple FTL analog replacements
-            if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-              s = hbsAnalogFtl(s, handle);
-            } else {
-              console.log('Unhandled HBS helper with handle [ ' + handle + ' ]');
-            }
-          }
-        } else {
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-          regexTriple = new RegExp(re, 'gim');
 
-          if(xx[1].trim() !== '') {
-            while(hmatches = regexTriple.exec(s)) {
-              if(hmatches[2].trim().length > 0) {
-                // args for helper backing class
-                newArgs = '';
-                exHmatches = hmatches[2].trim().split(' ');
 
-                for(var i=0, n=exHmatches.length; i<n; i++) {
-                  newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
-                }
 
-                xxx = new RegExp(hmatches[0], 'gim');
-                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
-              }
-            }
-          } else {
-            s = s.replace(regexTriple, '<@helper.$1$2/>');
-          }
-        }
-      }
-    }
-  }
 
-  return s;
-}
 
-/**
- * replaces known-hbs helpers with FTL analogues
- */
-function hbsAnalogFtl(s, handle) {
-  handle = handle.replace('#', '');
 
-  var analogues = {
-      toLowerCase : '?lower_case',
-      toUpperCase : '?upper_case'
-    }, 
-    context,
-    matches, 
-    re = new RegExp('{{#' + handle + "([a-z0-9_\\-\\.\\s]+)}}", 'gi');
-    // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
 
-  while(matches = re.exec(s)) {
-    context = '${' + matches[1].trim();
-    context += '!""' + analogues[handle] + '}';
 
-    s = s.replace(matches[0], context);
-  }
 
-  return s;
-}
+
+
+
+
+
+
+
+
+
 
 function hbsNoEscape(s, namespace) {
   namespace = normalizeNamespace(namespace);
@@ -510,7 +591,7 @@ function hbsCleanup(s) {
     re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
 
   while(matches = re_dotNot.exec(s)) {
-    console.log(matches[0], matches[1]);
+    // console.log(matches[0], matches[1]);
     tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
     s = s.replace(matches[0], tmp);
   }
