@@ -2,7 +2,13 @@ util = require('util');
 // console.log(util.inspect(arguments[k], false, null, true))
 
 var matches = [],
-  scopeDepth = [];
+  scopeDepth = [],
+  /**
+   * hack to workaround hbs casting all types to string on template context merge
+   */
+  knownBooleans = [
+    'showLoves'
+  ];
 
 
 
@@ -531,7 +537,7 @@ function hbsTokens(s, namespace) {
     }
 
     // hacky workaround bools
-    if(token.substr(0, 2) == 'is') {
+    if(token.substr(0, 2) == 'is' || knownBooleans.indexOf(token) > -1) {
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else {
