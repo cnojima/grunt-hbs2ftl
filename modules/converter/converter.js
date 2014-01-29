@@ -6,18 +6,6 @@ var matches = [],
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * add helper signatures here to help converter differentiate 
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
@@ -77,40 +65,27 @@ function hbsHelpers(s, namespace) {
 // console.log(matches[i], '----' +xx[1]);
         
         handle = xx[0];
+        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+        regexTriple = new RegExp(re, 'gim');
 
-// console.log(handle, '-----', matches[i]);
-        // if(handle.indexOf('#') > -1) {
-        //   if(hasBespokeConversion.indexOf(handle) < 0) {
-        //     // simple FTL analog replacements
-        //     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-        //       s = hbsAnalogFtl(s, handle);
-        //     } else {
-        //       console.log('Unhandled HBS helper with handle [ ' + handle + ' ]');
-        //     }
-        //   }
-        // } else {
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-          regexTriple = new RegExp(re, 'gim');
+        if(xx[1].trim() !== '') {
+          while(hmatches = regexTriple.exec(s)) {
+            if(hmatches[2].trim().length > 0) {
+              // args for helper backing class
+              newArgs = '';
+              exHmatches = hmatches[2].trim().split(' ');
 
-          if(xx[1].trim() !== '') {
-            while(hmatches = regexTriple.exec(s)) {
-              if(hmatches[2].trim().length > 0) {
-                // args for helper backing class
-                newArgs = '';
-                exHmatches = hmatches[2].trim().split(' ');
-
-                for(var i=0, n=exHmatches.length; i<n; i++) {
-                  newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
-                }
-
-                xxx = new RegExp(hmatches[0], 'gim');
-                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+              for(var i=0, n=exHmatches.length; i<n; i++) {
+                newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
               }
+
+              xxx = new RegExp(hmatches[0], 'gim');
+              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
             }
-          } else {
-            s = s.replace(regexTriple, '<@helper.$1$2/>');
           }
-        // }
+        } else {
+          s = s.replace(regexTriple, '<@helper.$1$2/>');
+        }
       }
     }
   }
@@ -123,7 +98,7 @@ function hbsHelpers(s, namespace) {
     args = matches[2].trim().split(' ');
 
     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-console.log(handle);
+// console.log(handle);
       // ${arg0!""?analog}
       s = hbsAnalogFtl(s, handle);
     } else {
