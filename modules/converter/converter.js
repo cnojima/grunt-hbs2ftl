@@ -13,7 +13,7 @@ var matches = [],
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ], hasHelperAnalogInFTL = [
-  'toLowerCase', 'toUpperCase'
+  'toLowerCase', 'toUpperCase', 'visualIterator'
 ], hasBespokeConversion = [
   '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
@@ -143,16 +143,18 @@ function hbsAnalogFtl(s, handle) {
 
   var analogues = {
       toLowerCase : '?lower_case',
-      toUpperCase : '?upper_case'
+      toUpperCase : '?upper_case',
+      visualIterator : ' + 1'
     }, 
     context,
     matches, 
-    re = new RegExp('{{' + handle + "([a-z0-9_\\-\\.\\s]+)}}", 'gi');
+    re = new RegExp('[{]{2,3}' + handle + "([a-z0-9_\\-\\.\\s]+)[}]{2,3}", 'gi');
     // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
 
   while(matches = re.exec(s)) {
     context = '${' + matches[1].trim();
-    context += '!""' + analogues[handle] + '}';
+    context += (handle != 'visualIterator') ? '!""' : '';
+    context += analogues[handle] + '}';
 
     s = s.replace(matches[0], context);
   }
@@ -291,7 +293,9 @@ function _convertOneEachBlock(s, namespace) {
     matches, eachStartDelta, newEach = '', 
     beforeEach, innerEach, afterEach, scopeNamespace,
     eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.lastIndexOf('{{/each}}');
+    eachEndIdx = s.lastIndexOf('{{/each}}'),
+    atIndex = /{{([^{]*)@index([^}]*)}}/gim,
+    atMatches;
 
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
@@ -307,11 +311,22 @@ function _convertOneEachBlock(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
-innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
+      innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
       //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
       // handle {{@index}}
       innerEach = innerEach.replace(/{{@index}}/gim, '${' + scopeNamespace + '_index}');
+
+      var atTmp;
+      while(atMatches = atIndex.exec(innerEach)) {
+        // in front of @index
+        if(atMatches[1] !== '') {
+          atTmp = atMatches[0].replace('@index', scopeNamespace + '_index');
+          innerEach = innerEach.replace(new RegExp(atMatches[0], 'gim'), atTmp);
+
+          // console.log(atTmp);
+        }
+      }
 
       newEach += innerEach;
       newEach += '</#list>';
@@ -491,6 +506,9 @@ function hbsTokens(s, namespace) {
   //s = s.replace(/{{{([a-z0-9_\-\.]+)}}}/gim, '${' + namespace + '$1!""}');
   s = hbsNoEscape(s, namespace);
 
+  // remove hbs node navigation notation
+  s = s.replace(/\.\.\//gim, '');
+
   // standard HBS token substition
   // s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${(' + namespace + '$1?c)!""?string}');
   var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s]+)}}/gi;
@@ -509,7 +527,7 @@ function hbsTokens(s, namespace) {
     if(token.substr(0, 2) == 'is') {
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
-    } else {
+    } else if(matches[1].indexOf('_index') < 0) {
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
     }
@@ -533,7 +551,7 @@ function hbsTokens(s, namespace) {
  * convert hbs' .length to ftl's .size
  */
 function hbsSize(s) {
-  var regex = /{{([\sa-z0-9\.#{]+)\.length([^}]*)}}/gim;
+  var regex = /{{([\sa-z0-9\.#{\/]+)\.length([^}]*)}}/gim;
 
   s = s.replace(regex, '{{$1?size$2}}');
   return s;
