@@ -32,7 +32,9 @@ var helperWhitelist = [
  * @return {String}
  */
 function hbsHelpers(s, namespace) {
-  var newArgs, exHmatches, hmatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
+  var 
+    i, n, j, m,
+    newArgs, exHmatches, hmatches, simpleMatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
     regex = /{{#(\w+)?[^}]*}}/gim;
 
   if(namespace) {
@@ -42,38 +44,40 @@ function hbsHelpers(s, namespace) {
   }
 
   // handle {{#helper }}args{{/helper}} -> <@helper.helper var0=arg0 var1=arg1 />
-  matches = s.match(regex);
-  if(matches) {
+  simpleMatches = s.match(regex);
+
+  if(simpleMatches) {
+    // console.log('{{#foo}} matches: ', matches);
     // extract helper handle
-    handle = matches[0].replace('{{#', '');
+    handle = simpleMatches[0].replace('{{#', '');
     handle = handle.substr(0, handle.indexOf(' '));
 
     if(helperWhitelist.indexOf(handle) > -1) {
-      handleRegex = new RegExp('{{/' + handle + '}}', 'gim');
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2 />');
-      // s = s.replace(handleRegex, '</@helper.' + handle + '>');
     }
   }
 
-
   // handle {{{helper arg0 arg1...}}} -> <@helper.helper var0=arg0 var1=arg1 />
   matches = s.match(/{{{([^}]+)}}}/gim);
-  
   if(matches) {
     // console.log(matches);
 
-    for(var i=0, n=matches.length; i<n; i++) {
-      handle = matches[i].replace(/[{}]*/gim, '');
+    for(i=0, n=matches.length; i<n; i++) {
+      // console.log('matches[i]: [ ' + i + ' ] --- ' + matches[i]);
+      // console.log(matches);
 
+      handle = matches[i].replace(/[{}]*/gim, '');
+      // console.log(handle);
+      
       // make sure we have an experssion, not a HTML-escaper (space in the call)
       if(handle.indexOf(' ') > -1) {
         xx = handle.split(' ');
-// console.log(matches[i], '----' +xx[1]);
+        // console.log(matches[i], '---- '  + xx[1]);
         
         handle = xx[0];
         re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
         regexTriple = new RegExp(re, 'gim');
-
+        
         if(xx[1].trim() !== '') {
           while(hmatches = regexTriple.exec(s)) {
             if(hmatches[2].trim().length > 0) {
@@ -81,11 +85,13 @@ function hbsHelpers(s, namespace) {
               newArgs = '';
               exHmatches = hmatches[2].trim().split(' ');
 
-              for(var i=0, n=exHmatches.length; i<n; i++) {
-                newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
+              for(j=0, m=exHmatches.length; j<m; j++) {
+                newArgs += [' var', j, '=', namespace, exHmatches[j], '!""'].join('');
               }
-
+              
+              // console.log(newArgs);
               xxx = new RegExp(hmatches[0], 'gim');
+              
               s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
             }
           }
@@ -104,7 +110,7 @@ function hbsHelpers(s, namespace) {
     args = matches[2].trim().split(' ');
 
     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-// console.log(handle);
+      // console.log(handle);
       // ${arg0!""?analog}
       s = hbsAnalogFtl(s, handle);
     } else {
@@ -534,7 +540,7 @@ function hbsTokens(s, namespace) {
 
     // hacky workaround bools
     if(token.substr(0, 2) == 'is' || knownBooleans.indexOf(token) > -1) {
-console.log(token);
+// console.log(token);
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else if(matches[1].indexOf('_index') < 0) {

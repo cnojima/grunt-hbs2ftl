@@ -27,6 +27,7 @@ module.exports = function(grunt) {
         }
       }).map(function(filepath) {
         // Read file source.
+        console.log('generating [ ' + filepath + ' ]'); 
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
@@ -77,11 +78,14 @@ module.exports = function(grunt) {
       src = convert.hbsJoin(src);
 
       // convert handlebars helpers in user-directives
+// console.log('--------- hbsHelpers');
       src = convert.hbsHelpers(src); // must be run AFTER convert.hbsBlocks()
 
       // lastly, convert standard hbs tokens into ftl-versions
+// console.log('--------- hbsTokens');
       src = convert.hbsTokens(src);
 
+// console.log('--------- hbsCleanup');
       src = convert.hbsCleanup(src);
 
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
