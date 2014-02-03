@@ -30,7 +30,7 @@ module.exports = function(grunt) {
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
-      // convert length to size
+      // convert .length to [namespace]_index
       src = convert.hbsSize(src);
 
       // convert contentFor

@@ -12,18 +12,6 @@ var matches = [],
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * add helper signatures here to help converter differentiate 
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
@@ -31,7 +19,7 @@ var matches = [],
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ], hasHelperAnalogInFTL = [
-  'toLowerCase', 'toUpperCase'
+  'toLowerCase', 'toUpperCase', 'visualIterator'
 ], hasBespokeConversion = [
   '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
@@ -83,40 +71,27 @@ function hbsHelpers(s, namespace) {
 // console.log(matches[i], '----' +xx[1]);
         
         handle = xx[0];
+        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+        regexTriple = new RegExp(re, 'gim');
 
-// console.log(handle, '-----', matches[i]);
-        // if(handle.indexOf('#') > -1) {
-        //   if(hasBespokeConversion.indexOf(handle) < 0) {
-        //     // simple FTL analog replacements
-        //     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-        //       s = hbsAnalogFtl(s, handle);
-        //     } else {
-        //       console.log('Unhandled HBS helper with handle [ ' + handle + ' ]');
-        //     }
-        //   }
-        // } else {
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-          regexTriple = new RegExp(re, 'gim');
+        if(xx[1].trim() !== '') {
+          while(hmatches = regexTriple.exec(s)) {
+            if(hmatches[2].trim().length > 0) {
+              // args for helper backing class
+              newArgs = '';
+              exHmatches = hmatches[2].trim().split(' ');
 
-          if(xx[1].trim() !== '') {
-            while(hmatches = regexTriple.exec(s)) {
-              if(hmatches[2].trim().length > 0) {
-                // args for helper backing class
-                newArgs = '';
-                exHmatches = hmatches[2].trim().split(' ');
-
-                for(var i=0, n=exHmatches.length; i<n; i++) {
-                  newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
-                }
-
-                xxx = new RegExp(hmatches[0], 'gim');
-                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+              for(var i=0, n=exHmatches.length; i<n; i++) {
+                newArgs += [' var', i, '=', namespace, exHmatches[i], '!""'].join('');
               }
+
+              xxx = new RegExp(hmatches[0], 'gim');
+              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
             }
-          } else {
-            s = s.replace(regexTriple, '<@helper.$1$2/>');
           }
-        // }
+        } else {
+          s = s.replace(regexTriple, '<@helper.$1$2/>');
+        }
       }
     }
   }
@@ -129,7 +104,7 @@ function hbsHelpers(s, namespace) {
     args = matches[2].trim().split(' ');
 
     if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-console.log(handle);
+// console.log(handle);
       // ${arg0!""?analog}
       s = hbsAnalogFtl(s, handle);
     } else {
@@ -174,16 +149,18 @@ function hbsAnalogFtl(s, handle) {
 
   var analogues = {
       toLowerCase : '?lower_case',
-      toUpperCase : '?upper_case'
+      toUpperCase : '?upper_case',
+      visualIterator : ' + 1'
     }, 
     context,
     matches, 
-    re = new RegExp('{{' + handle + "([a-z0-9_\\-\\.\\s]+)}}", 'gi');
+    re = new RegExp('[{]{2,3}' + handle + "([a-z0-9_\\-\\.\\s]+)[}]{2,3}", 'gi');
     // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
 
   while(matches = re.exec(s)) {
     context = '${' + matches[1].trim();
-    context += '!""' + analogues[handle] + '}';
+    context += (handle != 'visualIterator') ? '!""' : '';
+    context += analogues[handle] + '}';
 
     s = s.replace(matches[0], context);
   }
@@ -322,7 +299,9 @@ function _convertOneEachBlock(s, namespace) {
     matches, eachStartDelta, newEach = '', 
     beforeEach, innerEach, afterEach, scopeNamespace,
     eachStartIdx = s.search(/{{#each (.*)}}/im),
-    eachEndIdx = s.lastIndexOf('{{/each}}');
+    eachEndIdx = s.lastIndexOf('{{/each}}'),
+    atIndex = /{{([^{]*)@index([^}]*)}}/gim,
+    atMatches;
 
   namespace = namespace || '';
   namespace = normalizeNamespace(namespace);
@@ -342,11 +321,21 @@ function _convertOneEachBlock(s, namespace) {
 
       // sephora each walks up context node chain to find "../foo"
       innerEach = innerEach.replace(/\.\.\//gim, '');
-
       //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
       // handle {{@index}}
       innerEach = innerEach.replace(/{{@index}}/gim, '${' + scopeNamespace + '_index}');
+
+      var atTmp;
+      while(atMatches = atIndex.exec(innerEach)) {
+        // in front of @index
+        if(atMatches[1] !== '') {
+          atTmp = atMatches[0].replace('@index', scopeNamespace + '_index');
+          innerEach = innerEach.replace(new RegExp(atMatches[0], 'gim'), atTmp);
+
+          // console.log(atTmp);
+        }
+      }
 
       newEach += innerEach;
       newEach += '</#list>';
@@ -526,6 +515,9 @@ function hbsTokens(s, namespace) {
   //s = s.replace(/{{{([a-z0-9_\-\.]+)}}}/gim, '${' + namespace + '$1!""}');
   s = hbsNoEscape(s, namespace);
 
+  // remove hbs node navigation notation
+  s = s.replace(/\.\.\//gim, '');
+
   // standard HBS token substition
   // s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${(' + namespace + '$1?c)!""?string}');
   var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s]+)}}/gi;
@@ -545,7 +537,7 @@ function hbsTokens(s, namespace) {
 console.log(token);
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
-    } else {
+    } else if(matches[1].indexOf('_index') < 0) {
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
     }
@@ -569,7 +561,7 @@ console.log(token);
  * convert hbs' .length to ftl's .size
  */
 function hbsSize(s) {
-  var regex = /{{([\sa-z0-9\.#{]+)\.length([^}]*)}}/gim;
+  var regex = /{{([\sa-z0-9\.#{\/]+)\.length([^}]*)}}/gim;
 
   s = s.replace(regex, '{{$1?size$2}}');
   return s;
