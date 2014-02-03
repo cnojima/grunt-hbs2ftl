@@ -1,7 +1,7 @@
 {
   "name": "grunt-hbs2ftl",
   "description": "Converts handlebarsJS templates and layouts to Freemarker templates",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "homepage": "",
   "author": {
     "name": "Chris Nojima",
