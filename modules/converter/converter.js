@@ -338,7 +338,11 @@ function _convertOneEachBlock(s, namespace) {
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
-innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
+      innerEach = innerEach.replace(/{{this}}/gim, '{{' + scopeNamespace + '}}');
+
+      // sephora each walks up context node chain to find "../foo"
+      innerEach = innerEach.replace(/\.\.\//gim, '');
+
       //innerEach = _applyScopingConversion(innerEach, scopeNamespace);
 
       // handle {{@index}}
@@ -538,6 +542,7 @@ function hbsTokens(s, namespace) {
 
     // hacky workaround bools
     if(token.substr(0, 2) == 'is' || knownBooleans.indexOf(token) > -1) {
+console.log(token);
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else {
