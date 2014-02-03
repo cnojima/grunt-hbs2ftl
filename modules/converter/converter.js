@@ -19,7 +19,7 @@ var matches = [],
 var helperWhitelist = [
   'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ], hasHelperAnalogInFTL = [
-  'toLowerCase', 'toUpperCase', 'visualIterator'
+  'toLowerCase', 'toUpperCase', 'visualIterator', 'formatCurrency'
 ], hasBespokeConversion = [
   '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
@@ -56,6 +56,24 @@ function hbsHelpers(s, namespace) {
       s = s.replace(/{{#([ a-z0-9_\-\.]+)\s+([^}]+)?}}/gim, '<@helper.$1 $2 />');
     }
   }
+
+
+  // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
+  re = /{{([a-z0-9_\-]+) ([^}]*)}}/gim;
+  while(matches = re.exec(s)) {
+    handle = matches[1];
+    args = matches[2].trim().split(' ');
+
+    if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+      // console.log(handle);
+      // ${arg0!""?analog}
+      s = hbsAnalogFtl(s, handle);
+    } else {
+      // <@helper.helper var0=arg0 var1=arg1 />
+      s = hbsCustomHelper(s, matches[0], namespace, handle, args);
+    }
+  }
+
 
   // handle {{{helper arg0 arg1...}}} -> <@helper.helper var0=arg0 var1=arg1 />
   matches = s.match(/{{{([^}]+)}}}/gim);
@@ -102,23 +120,6 @@ function hbsHelpers(s, namespace) {
     }
   }
 
-  // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
-  re = /{{([a-z0-9_\-]+) ([^}]*)}}/gim;
-
-  while(matches = re.exec(s)) {
-    handle = matches[1];
-    args = matches[2].trim().split(' ');
-
-    if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-      // console.log(handle);
-      // ${arg0!""?analog}
-      s = hbsAnalogFtl(s, handle);
-    } else {
-      // <@helper.helper var0=arg0 var1=arg1 />
-      s = hbsCustomHelper(s, matches[0], namespace, handle, args);
-    }
-  }
-
   return s;
 }
 
@@ -154,6 +155,7 @@ function hbsAnalogFtl(s, handle) {
   handle = handle.replace('#', '');
 
   var analogues = {
+      formatCurrency : '?string.currency',
       toLowerCase : '?lower_case',
       toUpperCase : '?upper_case',
       visualIterator : ' + 1'
