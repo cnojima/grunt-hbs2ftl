@@ -453,22 +453,22 @@ function hbsUnless(s, namespace) {
 function hbsEq(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#eq ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '=='));
+  s = s.replace(/{{#eq ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '=='));
   s = s.replace(/{{\/eq}}/gim, '</#if>');
 
-  s = s.replace(/{{#ne ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '!='));
+  s = s.replace(/{{#ne ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '!='));
   s = s.replace(/{{\/ne}}/gim, '</#if>');
 
-  s = s.replace(/{{#lte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<='));
+  s = s.replace(/{{#lte ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '<='));
   s = s.replace(/{{\/lte}}/gim, '</#if>');
 
-  s = s.replace(/{{#lt ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '<'));
+  s = s.replace(/{{#lt ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '<'));
   s = s.replace(/{{\/lt}}/gim, '</#if>');
 
-  s = s.replace(/{{#gte ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '&gt;='));
+  s = s.replace(/{{#gte ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '&gt;='));
   s = s.replace(/{{\/gte}}/gim, '</#if>');
 
-  s = s.replace(/{{#gt ([^} ]+) ([^} ]+)}}/gim, _getIfToken(namespace, '&gt;'));
+  s = s.replace(/{{#gt ([^} ]+) ([^}]+)}}/gim, _getIfToken(namespace, '&gt;'));
   s = s.replace(/{{\/gt}}/gim, '</#if>');
 
   return s;
