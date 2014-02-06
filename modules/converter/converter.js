@@ -58,23 +58,6 @@ function hbsHelpers(s, namespace) {
   }
 
 
-  // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
-  re = /{{([a-z0-9_\-]+) ([^}]*)}}/gim;
-  while(matches = re.exec(s)) {
-    handle = matches[1];
-    args = matches[2].trim().split(' ');
-
-    if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
-      // console.log(handle);
-      // ${arg0!""?analog}
-      s = hbsAnalogFtl(s, handle);
-    } else {
-      // <@helper.helper var0=arg0 var1=arg1 />
-      s = hbsCustomHelper(s, matches[0], namespace, handle, args);
-    }
-  }
-
-
   // handle {{{helper arg0 arg1...}}} -> <@helper.helper var0=arg0 var1=arg1 />
   matches = s.match(/{{{([^}]+)}}}/gim);
   if(matches) {
@@ -119,6 +102,27 @@ function hbsHelpers(s, namespace) {
       }
     }
   }
+
+
+
+  // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
+  re = /{{([a-z0-9_\-]+) ([^}]*)}}/gim;
+  while(matches = re.exec(s)) {
+    handle = matches[1];
+    args = matches[2].trim().split(' ');
+
+    if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+      // console.log(handle);
+      // ${arg0!""?analog}
+      s = hbsAnalogFtl(s, handle);
+    } else {
+      // <@helper.helper var0=arg0 var1=arg1 />
+      s = hbsCustomHelper(s, matches[0], namespace, handle, args);
+    }
+  }
+
+
+
 
   return s;
 }
