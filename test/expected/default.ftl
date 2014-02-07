@@ -3,10 +3,10 @@
 
 <section class="page ${pageClass!""} active fade in" id="main">
   ${pageHead!""}
-  <#include "/common/navbarPrimary.ftl" />
-  <div class="content">
+  <#include "/common/navbarDefault.ftl" />
+  <div class="content ${contentClass!""}">
     ${contentHead!""}
-    <div class="main-content container">
+    <div class="main-content">
       <#nested>
     </div>
     ${contentFoot!""}

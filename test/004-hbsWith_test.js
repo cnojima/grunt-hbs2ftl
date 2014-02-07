@@ -23,18 +23,17 @@ var grunt = require('grunt');
     test.ifError(value)
 */
 
-exports.generate_layout = {
+exports.test = {
   setUp: function(done) {
     // setup here if necessary
     done();
   },
 
-  hbsEach_nested : function(test) {
+  hbsEach : function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/test/func_test_hbsEachNested.ftl', { encoding : 'utf8'});
-    var expected = grunt.file.read('test/expected/hbsEach-nested.ftl', { encoding : 'utf8'});
-    
+    var actual = grunt.file.read('tmp/func_test_hbsEach.ftl', { encoding : 'utf8'});
+    var expected = grunt.file.read('test/expected/hbsEach.ftl', { encoding : 'utf8'});
     
     actual = actual.replace(/[\r\n]+/gim, '\n');
     expected = expected.replace(/[\r\n]+/gim, '\n');

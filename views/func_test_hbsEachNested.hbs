@@ -1,0 +1,26 @@
+<!--
+{{! test handlebars embedded #each }}
+-->
+
+<div class="foo">
+  <p>
+    {{! "this" is implied in hbs}}
+    {{#each myVar}}
+      {{foo}} is {{bar}}
+
+      <p class="bar">
+        {{#each listThing}}
+          {{yetAnotherFoo}} should be {{yetAnotherBar}}
+
+          <p class="baz">
+            {{#each leafNode}}
+              {{node1}} & {{node2}}
+            {{/each}}
+          </p>
+        {{/each}}
+      </p>
+    {{/each}}
+  </p>
+
+  lotsa stuff here....
+</div>

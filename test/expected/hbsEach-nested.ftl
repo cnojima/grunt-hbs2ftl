@@ -5,16 +5,16 @@
 <div class="foo">
   <p>
     <#--  "this" is implied in hbs -->
-    <#list myVar as i_myVar>
-      ${i_myVar.foo!""} is ${i_myVar.bar!""}
+    <#list (myVar)![] as i_myVar>
+      ${foo!""} is ${bar!""}
 
       <p class="bar">
-        <#list i_myVar.listThing as i_listThing>
-          ${i_listThing.yetAnotherFoo!""} should be ${i_listThing.yetAnotherBar!""}
+        <#list (listThing)![] as i_listThing>
+          ${yetAnotherFoo!""} should be ${yetAnotherBar!""}
 
           <p class="baz">
-            <#list i_listThing.leafNode as i_leafNode>
-              ${i_leafNode.node1!""} & ${i_leafNode.node2!""}
+            <#list (leafNode)![] as i_leafNode>
+              ${node1!""} & ${node2!""}
             </#list>
           </p>
         </#list>

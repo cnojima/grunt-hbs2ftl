@@ -32,7 +32,7 @@ exports.test = {
   hbsEach : function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/test/func_test_hbsEachDeep.ftl', { encoding : 'utf8'});
+    var actual = grunt.file.read('tmp/func_test_hbsEachDeep.ftl', { encoding : 'utf8'});
     var expected = grunt.file.read('test/expected/hbsEachDeep.ftl', { encoding : 'utf8'});
     
     
