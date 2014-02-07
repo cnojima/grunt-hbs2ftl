@@ -351,6 +351,7 @@ function _convertOneEachBlock(s, namespace) {
 
       newEach += innerEach;
       newEach += '</#list>';
+
     }
 
     s = [ beforeEach, newEach, afterEach ].join('');
