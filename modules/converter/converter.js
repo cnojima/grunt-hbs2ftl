@@ -34,7 +34,10 @@ var helperWhitelist = [
 function hbsHelpers(s, namespace) {
   var 
     i, n, j, m,
-    newArgs, exHmatches, hmatches, simpleMatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
+    newArgs, hArgs,
+    exHmatches, hmatches, simpleMatches, matches,
+    handle,
+    handleRegex, regexTriple, re, xx, xxx,
     regex = /{{#(\w+)?[^}]*}}/gim;
 
   if(namespace) {
@@ -58,51 +61,20 @@ function hbsHelpers(s, namespace) {
   }
 
 
-  // handle {{{helper arg0 arg1...}}} -> <@helper.helper var0=arg0 var1=arg1 />
-  matches = s.match(/{{{([^}]+)}}}/gim);
-  if(matches) {
-    // console.log(matches);
+  // triple-stash {{{foo bar baz}}}
+  re = /{{{([^}\s]+)([^}]+)}}}/gim;
+  while(matches = re.exec(s)) {
+    console.log(matches);
 
-    for(i=0, n=matches.length; i<n; i++) {
-      // console.log('matches[i]: [ ' + i + ' ] --- ' + matches[i]);
-      // console.log(matches);
+    handle = matches[1];
+    hArgs = matches[2].trim().split(' ');
 
-      handle = matches[i].replace(/[{}]*/gim, '');
-      // console.log(handle);
-      
-      // make sure we have an experssion, not a HTML-escaper (space in the call)
-      if(handle.indexOf(' ') > -1) {
-        xx = handle.split(' ');
-        // console.log(matches[i], '---- '  + xx[1]);
-        
-        handle = xx[0];
-        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-        regexTriple = new RegExp(re, 'gim');
-        
-        if(xx[1].trim() !== '') {
-          while(hmatches = regexTriple.exec(s)) {
-            if(hmatches[2].trim().length > 0) {
-              // args for helper backing class
-              newArgs = '';
-              exHmatches = hmatches[2].trim().split(' ');
-
-              for(j=0, m=exHmatches.length; j<m; j++) {
-                newArgs += [' var', j, '=(', namespace, exHmatches[j], ')!""'].join('');
-              }
-              
-              // console.log(newArgs);
-              xxx = new RegExp(hmatches[0], 'gim');
-              
-              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
-            }
-          }
-        } else {
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
-        }
-      }
+    if(hArgs !== '') {
+      s = hbsCustomHelper(s, matches[0], namespace, handle, hArgs);
+    } else {
+      s = s.replace(matches[0], '<@helper.' + matches[1] + ' />');
     }
   }
-
 
 
   // handle {{helper arg0 arg1}} -> <@helper.helper var0=arg0 var1=arg1 />
@@ -120,9 +92,6 @@ function hbsHelpers(s, namespace) {
       s = hbsCustomHelper(s, matches[0], namespace, handle, args);
     }
   }
-
-
-
 
   return s;
 }
