@@ -87,7 +87,7 @@ function hbsHelpers(s, namespace) {
               exHmatches = hmatches[2].trim().split(' ');
 
               for(j=0, m=exHmatches.length; j<m; j++) {
-                newArgs += [' var', j, '=', namespace, exHmatches[j], '!""'].join('');
+                newArgs += [' var', j, '=(', namespace, exHmatches[j], ')!""'].join('');
               }
               
               // console.log(newArgs);
