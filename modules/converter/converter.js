@@ -576,12 +576,10 @@ function hbsCleanup(s) {
     re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
 
   while(matches = re_dotNot.exec(s)) {
-     console.log(matches[0], matches[1]);
+     //console.log(matches[0], matches[1]);
     tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
     s = s.replace(matches[0], tmp);
   }
-
-  s = s.replace(/\.\[/gim,'[');
 
   // while(matches = re_dotNotFtl.exec(s)) {
   //   tmp = matches[0].replace(matches[1], '[' + matches[1] + '].');
