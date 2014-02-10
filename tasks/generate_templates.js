@@ -59,9 +59,6 @@ module.exports = function(grunt) {
       // convert comments
       src = convert.hbsComments(src);
 
-      // // convert contentFor
-      // src = convert.hbsContentFor(src);
-
       // convert if/else
       src = convert.hbsIf(src);
 

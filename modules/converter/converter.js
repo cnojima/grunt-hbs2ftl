@@ -435,7 +435,7 @@ function _getIfToken(namespace, op) {
 function hbsIf(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#if ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace));
+  s = s.replace(/{{#if ([\w\.\?\[\]]+[^}])}}/gim, _getIfToken(namespace));
   s = s.replace(/{{else}}/gim, '<#else>');
   s = s.replace(/{{\/if}}/gim, '</#if>');
 
@@ -450,7 +450,7 @@ function hbsIf(s, namespace) {
 function hbsUnless(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
-  s = s.replace(/{{#unless ([\w\.\?]+[^}])}}/gim, _getIfToken(namespace, 'unless'));
+  s = s.replace(/{{#unless ([\w\.\?\[\]]+[^}])}}/gim, _getIfToken(namespace, 'unless'));
   s = s.replace(/{{\/unless}}/gim, '</#if>');
   return s;
 }
@@ -574,7 +574,7 @@ function hbsTokens(s, namespace) {
  * convert hbs' .length to ftl's .size
  */
 function hbsSize(s) {
-  var regex = /{{([\sa-z0-9\.#{\/]+)\.length([^}]*)}}/gim;
+  var regex = /{{([\sa-z0-9\.#{\/\[\]]+)\.length([^}]*)}}/gim;
 
   s = s.replace(regex, '{{$1?size$2}}');
   return s;
