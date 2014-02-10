@@ -31,6 +31,9 @@ module.exports = function(grunt) {
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
+      // console.log('--------- hbsArrayNotation');
+      src = convert.hbsArrayNotation(src);
+
       // convert .length to [namespace]_index
       src = convert.hbsSize(src);
 
@@ -84,9 +87,6 @@ module.exports = function(grunt) {
       // lastly, convert standard hbs tokens into ftl-versions
 // console.log('--------- hbsTokens');
       src = convert.hbsTokens(src);
-
-// console.log('--------- hbsCleanup');
-      src = convert.hbsCleanup(src);
 
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 

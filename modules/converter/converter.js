@@ -533,7 +533,7 @@ function hbsTokens(s, namespace) {
 
   // standard HBS token substition
   // s = s.replace(/{{([ a-z0-9_\-\.\?]+)}}/gim, '${(' + namespace + '$1?c)!""?string}');
-  var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s]+)}}/gi;
+  var token, exToken, matches, tokenRe = /{{([a-z0-9_\-\.\?\s\[\]]+)}}/gi;
 
   while(matches = tokenRe.exec(s)) {
     // console.log(matches[0], matches[1]);
@@ -600,29 +600,24 @@ function hbsJoin(s) {
  * @param {String} s Template contents
  * @return {String}
  */
-function hbsCleanup(s) {
+function hbsArrayNotation(s) {
   // hbs array indice notation to ftl's
   var tmp, matches,
-    re_dotNotFtl = /[<|{]+[#@a-z0-9_\.\-\s]+_([0-9]{1,})_*?[^>\]][>|}]+/gim,
-    re_dotNot = /[<|{]+[#@a-z0-9_\.\-\s]+\.([0-9]{1,}).*?[^>\]][>|}]+/gim;
+    re_dotNot = /\{{2,3}.*?(\.[\[]?([0-9]+)[\]]?).*\}{2,3}/im;
+
 
   while(matches = re_dotNot.exec(s)) {
-    // console.log(matches[0], matches[1]);
-    tmp = matches[0].replace('.' + matches[1], '[' + matches[1] + ']');
+    // console.log(matches[1], matches[2]);
+    tmp = matches[0].replace(matches[1], '[' + matches[2] + ']');
     s = s.replace(matches[0], tmp);
   }
-
-  // while(matches = re_dotNotFtl.exec(s)) {
-  //   tmp = matches[0].replace(matches[1], '[' + matches[1] + '].');
-  //   s = s.replace(matches[0], tmp);
-  // }
 
   return s;
 }
 
 
 module.exports = {
-  hbsCleanup      : hbsCleanup,
+  hbsArrayNotation: hbsArrayNotation,
   hbsComments     : hbsComments,
   hbsEach         : hbsEach,
   hbsEq           : hbsEq,
