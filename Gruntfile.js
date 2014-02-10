@@ -9,7 +9,15 @@
 'use strict';
 
 var path = require('path'),
-  viewsPath = __dirname + '/../../views';
+  fs = require('fs'),
+  viewsPath = __dirname + '/views';
+  // viewsPath = __dirname + '/../../views';
+
+
+// ensure working test directory exists
+if(!fs.existsSync(__dirname + '/tmp')) {
+  fs.mkdirSync(__dirname + '/tmp');
+}
 
 
 module.exports = function(grunt) {
@@ -93,7 +101,7 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['jshint', 'hbs2ftl']);
 
   // just run tests
-  grunt.registerTask('test', [ 'clean', 'jshint', 'nodeunit' ]);
+  grunt.registerTask('test', [ 'jshint', 'hbs2ftl' ]);
 
   // CN: dev tasks
   grunt.registerTask('hbseachall', [ 'clean', 'convert_hbsEachAll']);

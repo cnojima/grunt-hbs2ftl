@@ -1,0 +1,15 @@
+<!-- standard helper with encapsulated argument {{#foo}}bar{{/foo}} -->
+{{#foo }}bar{{/foo}}
+
+
+<!-- triple stash with n args v2 {{{foo bar baz}}} -->
+{{{foo bar baz}}}
+
+
+
+<!-- triple stash with n args v1 {{{foo }}} -->
+{{{foo }}} {{! whitespace is our hack}}
+
+
+<!-- double stash with n args v1 -->
+{{foo bar.one baz.two}}
