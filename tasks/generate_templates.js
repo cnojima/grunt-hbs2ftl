@@ -31,7 +31,7 @@ module.exports = function(grunt) {
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
-      // src = convert.hbsStripHTMLComments(src);
+      src = convert.hbsStripHTMLComments(src);
 
       // console.log('--------- hbsArrayNotation');
       src = convert.hbsArrayNotation(src);
