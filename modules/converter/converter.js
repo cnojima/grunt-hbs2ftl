@@ -38,7 +38,7 @@ function hbsStripHTMLComments(s) {
   var matches, re = /<!--.*-->/im;
 
   while(matches = re.exec(s)) {
-console.log(matches[0]);
+// console.log(matches[0]);
     s = s.replace(matches[0], '');
   }
 
