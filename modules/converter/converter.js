@@ -24,6 +24,33 @@ var helperWhitelist = [
   '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
 ];
 
+
+
+
+
+
+
+
+/**
+ * strip HTML comments as that's how we'd kill template execution
+ */
+function hbsStripHTMLComments(s) {
+  var matches, re = /<!--.*-->/im;
+
+  while(matches = re.exec(s)) {
+console.log(matches[0]);
+    s = s.replace(matches[0], '');
+  }
+
+  return s;
+}
+
+
+
+
+
+
+
 /**
  * converts HBS helpers into FTL custom directives 
  * (usually backed by a Java class implementing TemplateModelDirective)
@@ -76,29 +103,34 @@ function hbsHelpers(s, namespace) {
         // console.log(matches[i], '---- '  + xx[1]);
         
         handle = xx[0];
-        re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
-        regexTriple = new RegExp(re, 'gim');
-        
-        if(xx[1].trim() !== '') {
-          while(hmatches = regexTriple.exec(s)) {
-            if(hmatches[2].trim().length > 0) {
-              // args for helper backing class
-              newArgs = '';
-              exHmatches = hmatches[2].trim().split(' ');
 
-              for(j=0, m=exHmatches.length; j<m; j++) {
-                newArgs += [' var', j, '=(', namespace, exHmatches[j], ')!""'].join('');
-              }
-              
-              // console.log(newArgs);
-              xxx = new RegExp(hmatches[0], 'gim');
-              
-              s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
-            }
-          }
+        if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
+          s = hbsAnalogFtl(s, handle);
         } else {
-          s = s.replace(regexTriple, '<@helper.$1$2/>');
-        }
+          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          regexTriple = new RegExp(re, 'gim');
+          
+          if(xx[1].trim() !== '') {
+            while(hmatches = regexTriple.exec(s)) {
+              if(hmatches[2].trim().length > 0) {
+                // args for helper backing class
+                newArgs = '';
+                exHmatches = hmatches[2].trim().split(' ');
+
+                for(j=0, m=exHmatches.length; j<m; j++) {
+                  newArgs += [' var', j, '=(', namespace, exHmatches[j], ')!""'].join('');
+                }
+                
+                // console.log(newArgs);
+                xxx = new RegExp(hmatches[0], 'gim');
+                
+                s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
+              }
+            }
+          } else {
+            s = s.replace(regexTriple, '<@helper.$1$2/>');
+          }
+        } // end custom (java) helper
       }
     }
   }
@@ -626,6 +658,7 @@ module.exports = {
   hbsJoin         : hbsJoin,
   hbsNoEscape     : hbsNoEscape,
   hbsSize         : hbsSize,
+  hbsStripHTMLComments : hbsStripHTMLComments,
   hbsTokens       : hbsTokens,
   hbsUnless       : hbsUnless,
   hbsWith         : hbsWith,
