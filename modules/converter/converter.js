@@ -578,8 +578,8 @@ function hbsTokens(s, namespace) {
     }
 
     // hacky workaround bools
-    if(token.substr(0, 2) == 'is' || knownBooleans.indexOf(token) > -1) {
-// console.log(token);
+    if(token.substr(0, 3) == 'has' || token.substr(0, 2) == 'is' || knownBooleans.indexOf(token) > -1) {
+// console.log('BOOL HACK [ ' + token + ' ]');
       // make FTL act like hbs - ignore undefineds/nulls
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else if(matches[1].indexOf('_index') < 0) {
