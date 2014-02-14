@@ -12,6 +12,8 @@
 var convert = require(__dirname + '/../modules/converter/converter.js');
 
 module.exports = function(grunt) {
+  var pkg = grunt.file.readJSON( __dirname + '/../package.json');
+
   grunt.registerMultiTask('generate_layout', 'Converts express-hbs layout meta-templates Freemarker "layouts"', function() {
     //console.log('@generate_layout with ' + this.files.length + ' files');
     var fp;
@@ -56,6 +58,9 @@ module.exports = function(grunt) {
       // substitute tokens
       src = convert.hbsTokens(src);
 
+      // add version tag
+      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
+  
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
       // Print a success message.

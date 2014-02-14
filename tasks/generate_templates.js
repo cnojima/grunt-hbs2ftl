@@ -12,6 +12,9 @@
 var convert = require(__dirname + '/../modules/converter/converter.js');
 
 module.exports = function(grunt) {
+
+  var pkg = grunt.file.readJSON( __dirname + '/../package.json');
+
   grunt.registerMultiTask('generate_templates', 'Converts handlebarsJS templates into Freemarker templates', function() {
     console.log('@generate_templates with ' + this.files.length + ' files');
 
@@ -86,6 +89,9 @@ module.exports = function(grunt) {
       // lastly, convert standard hbs tokens into ftl-versions
 // console.log('--------- hbsTokens');
       src = convert.hbsTokens(src);
+
+      // add version tag
+      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
 
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
