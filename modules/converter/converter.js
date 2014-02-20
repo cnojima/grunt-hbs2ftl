@@ -21,7 +21,7 @@ var helperWhitelist = [
 ], hasHelperAnalogInFTL = [
   'toLowerCase', 'toUpperCase', 'visualIterator', 'formatCurrency'
 ], hasBespokeConversion = [
-  '#if', '#eq', '#ne', '#gt', '#gte', '#lt', '#lte', '#each', '#join', '#with', '#unless'
+  'if', 'eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'each', 'join', 'with', 'unless'
 ];
 
 
@@ -154,6 +154,16 @@ function hbsHelpers(s, namespace) {
   }
 
 
+  // handle combination helpers {{#foo var1 var2}}Something{{/foo}}
+  re = /{{#([^}\s]+) ([^}]+)}}/gim;
+
+  while(matches = re.exec(s)) {
+    if(hasBespokeConversion.indexOf(matches[1]) < 0) {
+      args = matches[2].trim().split(' ');
+      s = hbsCustomHelper(s, matches[0], namespace, matches[1], args, true);
+      console.log(matches[0],matches[1], args);
+    }
+  }
 
 
   return s;
@@ -167,9 +177,12 @@ function hbsHelpers(s, namespace) {
  * @param {String} namespace
  * @param {String} handle Name of custom helper
  * @param {Array} args
+ * @param {Boolean} hasBody
  */
-function hbsCustomHelper(s, toReplace, namespace, handle, args) {
-  var newHelper = '<@helper.' + handle;
+function hbsCustomHelper(s, toReplace, namespace, handle, args, hasBody) {
+  var newHelper = '<@helper.' + handle, bodyContent;
+
+  hasBody = hasBody || false;
 
   for(var i=0, n=args.length; i<n; i++) {
     if(args[i] !== '') {
@@ -177,9 +190,23 @@ function hbsCustomHelper(s, toReplace, namespace, handle, args) {
     }
   }
 
-  newHelper += ' />';
-// console.log(newHelper);
-  s = s.replace(toReplace, newHelper);
+  if(hasBody) {
+    // close opening tag
+    newHelper += '>';
+
+    // collect body
+    var toReplaceNew, expressionClose = '{{/' + handle + '}}';
+
+    bodyContent = toReplaceNew = s.substr(s.indexOf(toReplace), (s.indexOf(expressionClose) + expressionClose.length - s.indexOf(toReplace)));
+    bodyContent = bodyContent.replace(toReplace, newHelper).replace(expressionClose, '</@helper.' + handle + '>');
+
+// console.log(bodyContent, toReplaceNew);
+    s = s.replace(toReplaceNew, bodyContent);
+// console.log(bodyContent.replace(/\s/gim, '|'));
+  } else {
+    newHelper += ' />';
+    s = s.replace(toReplace, newHelper);
+  }
 
   return s;
 }
