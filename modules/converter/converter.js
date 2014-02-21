@@ -17,9 +17,9 @@ var matches = [],
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
  */
 var helperWhitelist = [
-  'tel_anchor', 'staticVersion', 'hbstemplates', 'qtyOption'
+  'telephoneAnchor', 'staticVersion', 'hbstemplates', 'qtyOption'
 ], hasHelperAnalogInFTL = [
-  'toLowerCase', 'toUpperCase', 'visualIterator', 'formatCurrency'
+  'toLowerCase', 'toUpperCase', 'visualIterator', 'formatCurrency', 'isArray', 'isNotArray'
 ], hasBespokeConversion = [
   'if', 'eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'each', 'join', 'with', 'unless'
 ];
@@ -158,10 +158,12 @@ function hbsHelpers(s, namespace) {
   re = /{{#([^}\s]+) ([^}]+)}}/gim;
 
   while(matches = re.exec(s)) {
-    if(hasBespokeConversion.indexOf(matches[1]) < 0) {
+    if(hasHelperAnalogInFTL.indexOf(matches[1]) > -1) {
+      s = hbsAnalogFtl(s, matches[1]);
+    } else if(hasBespokeConversion.indexOf(matches[1]) < 0) {
       args = matches[2].trim().split(' ');
       s = hbsCustomHelper(s, matches[0], namespace, matches[1], args, true);
-      console.log(matches[0],matches[1], args);
+// console.log(matches[0],matches[1], args);
     }
   }
 
@@ -219,19 +221,45 @@ function hbsAnalogFtl(s, handle) {
 
   var analogues = {
       formatCurrency : '?string.currency',
+      isArray : '?is_sequence',
+      isNotArray : '?is_sequence',
       toLowerCase : '?lower_case',
       toUpperCase : '?upper_case',
       visualIterator : ' + 1'
     }, 
     context,
     matches, 
-    re = new RegExp('[{]{2,3}' + handle + "([a-z0-9_\\-\\.\\s]+)[}]{2,3}", 'gi');
-    // re = /{{(#[a-z0-9_\-\.\?\s]+)}}/gi;
+    reCloser = new RegExp('{{/' + handle + '}}'),
+    re = new RegExp('[{]{2,3}#*' + handle + "([a-z0-9_\\-\\.\\s]+)[}]{2,3}", 'gi');
+
+
+
+
+
 
   while(matches = re.exec(s)) {
-    context = '${' + matches[1].trim();
-    context += (handle != 'visualIterator') ? '!""' : '';
-    context += analogues[handle] + '}';
+    // fork for is[Test]
+    if(handle.indexOf('is') === 0) {
+      // <#if [expression]>
+      context = '<#if (';
+
+      // invert logic for "Nots"
+      if(handle.indexOf('Not') > -1) {
+        context += '!';
+      }
+
+      context += matches[1].trim();
+      context += analogues[handle];
+      context += ')>';
+
+      // replace closer
+      s = s.replace(reCloser, '</#if>');
+    } else {
+      context = '${';
+      context += matches[1].trim();
+      context += (handle != 'visualIterator') ? '!""' : '';
+      context += analogues[handle] + '}';
+    }
 
     s = s.replace(matches[0], context);
   }
@@ -445,16 +473,17 @@ function _getIfToken(namespace, op) {
   var jsIf = [
     '<#t><#if ',
     '(', namespace, '$1)?has_content && (',
+      // '(',
       // booleans
-      '  ( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || ',
+      '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || ',
       // integers
-      '  ( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || ',
+      '( ', namespace, '$1?is_number && ', namespace, '$1 != 0 ) || ',
       // hash
-      '  ( ', namespace, '$1?is_hash) || ', // ?has_content takes care of this
+      '( ', namespace, '$1?is_hash) || ', // ?has_content takes care of this
       // sequences
-      '  ( ', namespace, '$1?is_sequence) || ', // ?has_content takes care of this
+      '( ', namespace, '$1?is_sequence) || ', // ?has_content takes care of this
       // strings
-      '  ( ', namespace, '$1?is_string)', // ?has_content takes care of this
+      '( ', namespace, '$1?is_string)', // ?has_content takes care of this
     ')', // end type + value checks
     '>'
   ].join(''),
