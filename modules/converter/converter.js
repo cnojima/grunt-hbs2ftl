@@ -107,7 +107,8 @@ function hbsHelpers(s, namespace) {
         if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
           s = hbsAnalogFtl(s, handle);
         } else {
-          re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          // re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
+          re = '{{{(' + handle + ')([^}]+)}}}';
           regexTriple = new RegExp(re, 'gim');
           
           if(xx[1].trim() !== '') {
