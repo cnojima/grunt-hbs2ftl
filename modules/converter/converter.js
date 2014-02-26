@@ -242,16 +242,16 @@ function hbsAnalogFtl(s, handle) {
     // fork for is[Test]
     if(handle.indexOf('is') === 0) {
       // <#if [expression]>
-      context = '<#if (';
+      context = '<#if ';
 
       // invert logic for "Nots"
-      if(handle.indexOf('Not') > -1) {
-        context += '!';
-      }
+      if(handle.indexOf('Not') > -1) context += '!'
 
+      context += '((';
       context += matches[1].trim();
+      context += ')!"")';
       context += analogues[handle];
-      context += ')>';
+      context += '>';
 
       // replace closer
       s = s.replace(reCloser, '</#if>');
