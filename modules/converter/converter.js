@@ -245,7 +245,7 @@ function hbsAnalogFtl(s, handle) {
       context = '<#if ';
 
       // invert logic for "Nots"
-      if(handle.indexOf('Not') > -1) context += '!'
+      if(handle.indexOf('Not') > -1) context += '!';
 
       context += '((';
       context += matches[1].trim();
@@ -461,7 +461,7 @@ function injectMacroHandle(s, name) {
     '<#macro ', name, '>\n',
     s, "\n",
     '</#macro>'
-  ].join('')
+  ].join('');
 }
 
 
@@ -773,4 +773,4 @@ module.exports = {
     s = s.replace(/{{{block [\'|\"](\w+)[\'|\"]}}}/gim, '${$1!""}');
     return s;
   }
-}
+};

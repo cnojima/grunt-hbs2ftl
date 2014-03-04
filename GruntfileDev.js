@@ -1,3 +1,5 @@
+/*jslint node: true */
+
 /*
  * grunt-sephora-hbs2ftl
  * 

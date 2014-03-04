@@ -1,3 +1,5 @@
+/*jslint node: true */
+
 'use strict';
 
 var convert = require(__dirname + '/../modules/converter/converter.js');
