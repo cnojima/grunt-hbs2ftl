@@ -755,6 +755,17 @@ module.exports = {
   hbsContentFor : function(s) {
     s = s.replace(/{{#contentFor [\'|\"](\w+)[\'|\"]}}/gim, '<#global $1>');
     s = s.replace(/{{\/contentFor}}/gim, '</#global>');
+  
+    var globals = /<#global \w+>?[^\/#global].*[\s\S\n\r]*?<\/#global>/gim;
+    // move to top
+    var matches = s.match(globals);
+
+    if(matches) {
+      s = s.replace(globals, '');
+      s = matches.join("\n") + s;
+      s = s.trim();
+    }
+
     return s;
   },
 
