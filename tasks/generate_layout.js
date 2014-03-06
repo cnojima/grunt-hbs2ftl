@@ -59,6 +59,8 @@ module.exports = function(grunt) {
       // substitute tokens
       src = convert.hbsTokens(src);
 
+      src = convert.ftlTrim(src);
+
       // add version tag
       src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
   
