@@ -91,8 +91,15 @@ module.exports = function(grunt) {
 // console.log('--------- hbsTokens');
       src = convert.hbsTokens(src);
 
+      src = convert.ftlTrim(src);
+
+      src = src.trim();
+
       // add version tag
       src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
+
+      // compress
+      src = '<#ftl strip_whitespace=true strip_text=true><#compress>' + src + '</#compress>';
 
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 

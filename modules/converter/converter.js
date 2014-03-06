@@ -705,7 +705,27 @@ function hbsArrayNotation(s) {
 }
 
 
+
+function ftlTrim(s) {
+  var line, a = s.split('\n'), out = [];
+
+  for(var i=0, n=a.length; i<n; i++) {
+    // out.push(a[i].trim());
+    line = a[i];
+
+    if(line.indexOf('//') > -1) {
+      line = line.replace(/\/\/ .*$/, '');
+    }
+
+    out.push('\n<#t>' + line);
+  }
+
+  return out.join('');
+}
+
+
 module.exports = {
+  ftlTrim         : ftlTrim,
   hbsArrayNotation: hbsArrayNotation,
   hbsComments     : hbsComments,
   hbsEach         : hbsEach,
