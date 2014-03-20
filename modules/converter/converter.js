@@ -707,7 +707,8 @@ function hbsArrayNotation(s) {
 
 
 function ftlTrim(s) {
-  var line, a = s.split('\n'), out = [];
+  return s;
+  /*var line, a = s.split('\n'), out = [];
 
   for(var i=0, n=a.length; i<n; i++) {
     // out.push(a[i].trim());
@@ -720,11 +721,17 @@ function ftlTrim(s) {
     out.push('\n<#t>' + line);
   }
 
-  return out.join('');
+  return out.join('');*/
+}
+
+function ftlCompress(s) {
+  return s;
+  // return '<#ftl strip_whitespace=true strip_text=true><#compress>' + s + '</#compress>';
 }
 
 
 module.exports = {
+  ftlCompress     : ftlCompress,
   ftlTrim         : ftlTrim,
   hbsArrayNotation: hbsArrayNotation,
   hbsComments     : hbsComments,

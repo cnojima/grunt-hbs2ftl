@@ -31,7 +31,7 @@ module.exports = function(grunt) {
         }
       }).map(function(filepath) {
         // Read file source.
-        console.log('generating [ ' + filepath + ' ]'); 
+        // console.log('generating [ ' + filepath + ' ]'); 
         return grunt.file.read(filepath, { encoding : 'utf8'});
       }).join('');
 
@@ -91,20 +91,22 @@ module.exports = function(grunt) {
 // console.log('--------- hbsTokens');
       src = convert.hbsTokens(src);
 
+      // html minify
       src = convert.ftlTrim(src);
 
+      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
+      
       src = src.trim();
+      
+      src = convert.ftlCompress(src);
+
 
       // add version tag
-      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
-
-      // compress
-      src = '<#ftl strip_whitespace=true strip_text=true><#compress>' + src + '</#compress>';
 
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
       // Print a success message.
-      // grunt.log.writeln('File "' + f.dest + '" created.');
+      grunt.log.writeln('Generating [ ' + f.dest + ' ]');
     });
   });
 };

@@ -53,6 +53,9 @@ module.exports = function(grunt) {
       // convert comments
       src = convert.hbsComments(src);
 
+      // convert if/else
+      src = convert.hbsIf(src);
+
       // wrap with required macro tag
       src = convert.injectMacroHandle(src, fp);
 
