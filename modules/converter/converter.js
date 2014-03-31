@@ -174,7 +174,7 @@ function hbsHelpers(s, namespace) {
 
 /**
  * replaces hbs helper with FTL custom helper
- * <@helper.helper var0=arg0!"" var1=arg1!"" />
+ * <@helper.helper var0=(arg0!"") var1=(arg1!"") />
  * @param {String} s 
  * @param {String} toReplace Token to replace with converted helper
  * @param {String} namespace
@@ -189,7 +189,7 @@ function hbsCustomHelper(s, toReplace, namespace, handle, args, hasBody) {
 
   for(var i=0, n=args.length; i<n; i++) {
     if(args[i] !== '') {
-      newHelper += ' var' + i + '=' + namespace + args[i] + '!""';
+      newHelper += ' var' + i + '=(' + namespace + args[i] + '!"")';
     }
   }
 
@@ -256,9 +256,9 @@ function hbsAnalogFtl(s, handle) {
       // replace closer
       s = s.replace(reCloser, '</#if>');
     } else {
-      context = '${';
+      context = '${(';
       context += matches[1].trim();
-      context += (handle != 'visualIterator') ? '!""' : '';
+      context += (handle != 'visualIterator') ? '!"")' : ')';
       context += analogues[handle] + '}';
     }
 
@@ -605,7 +605,7 @@ function hbsComments(s) {
 
 function hbsNoEscape(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${' + namespace + '$1!""?html}');
+  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${(' + namespace + '$1!"")?html}');
   return s;
 }
 
@@ -641,7 +641,7 @@ function hbsTokens(s, namespace) {
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else if(matches[1].indexOf('_index') < 0) {
       // make FTL act like hbs - ignore undefineds/nulls
-      s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
+      s = s.replace(matches[0], '${(' + namespace + matches[1] + '!"")}');
     }
   }
 
