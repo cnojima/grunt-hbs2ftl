@@ -13,7 +13,7 @@ var matches = [],
 
 
 /**
- * add helper signatures here to help converter differentiate 
+ * add helper signatures here to help converter differentiate
  * between {{{foo }}} (helper) and {{{bar}}} (do not escape)
  */
 var helperWhitelist = [
@@ -52,14 +52,14 @@ function hbsStripHTMLComments(s) {
 
 
 /**
- * converts HBS helpers into FTL custom directives 
+ * converts HBS helpers into FTL custom directives
  * (usually backed by a Java class implementing TemplateModelDirective)
  * @param {String} s HBS template markup
  * @param {String} namespace
  * @return {String}
  */
 function hbsHelpers(s, namespace) {
-  var 
+  var
     i, n, j, m,
     newArgs, exHmatches, hmatches, simpleMatches, matches, handle, handleRegex, regexTriple, re, xx, xxx,
     regex = /{{#(\w+)?[^}]*}}/gim;
@@ -96,12 +96,12 @@ function hbsHelpers(s, namespace) {
 
       handle = matches[i].replace(/[{}]*/gim, '');
       // console.log(handle);
-      
+
       // make sure we have an experssion, not a HTML-escaper (space in the call)
       if(handle.indexOf(' ') > -1) {
         xx = handle.split(' ');
         // console.log(matches[i], '---- '  + xx[1]);
-        
+
         handle = xx[0];
 
         if(hasHelperAnalogInFTL.indexOf(handle) > -1) {
@@ -110,7 +110,7 @@ function hbsHelpers(s, namespace) {
           // re = '{{{(' + handle + ')([\\s\\.a-z0-9\\-()]+)}}}';
           re = '{{{(' + handle + ')([^}]+)}}}';
           regexTriple = new RegExp(re, 'gim');
-          
+
           if(xx[1].trim() !== '') {
             while(hmatches = regexTriple.exec(s)) {
               if(hmatches[2].trim().length > 0) {
@@ -121,10 +121,10 @@ function hbsHelpers(s, namespace) {
                 for(j=0, m=exHmatches.length; j<m; j++) {
                   newArgs += [' var', j, '=(', namespace, exHmatches[j], ')!""'].join('');
                 }
-                
+
                 // console.log(newArgs);
                 xxx = new RegExp(hmatches[0], 'gim');
-                
+
                 s = s.replace(xxx, '<@helper.' + handle + newArgs + '/>');
               }
             }
@@ -174,8 +174,8 @@ function hbsHelpers(s, namespace) {
 
 /**
  * replaces hbs helper with FTL custom helper
- * <@helper.helper var0=arg0!"" var1=arg1!"" />
- * @param {String} s 
+ * <@helper.helper var0=(arg0!"") var1=(arg1!"") />
+ * @param {String} s
  * @param {String} toReplace Token to replace with converted helper
  * @param {String} namespace
  * @param {String} handle Name of custom helper
@@ -189,7 +189,7 @@ function hbsCustomHelper(s, toReplace, namespace, handle, args, hasBody) {
 
   for(var i=0, n=args.length; i<n; i++) {
     if(args[i] !== '') {
-      newHelper += ' var' + i + '=' + namespace + args[i] + '!""';
+      newHelper += ' var' + i + '=(' + namespace + args[i] + '!"")';
     }
   }
 
@@ -227,9 +227,9 @@ function hbsAnalogFtl(s, handle) {
       toLowerCase : '?lower_case',
       toUpperCase : '?upper_case',
       visualIterator : ' + 1'
-    }, 
+    },
     context,
-    matches, 
+    matches,
     reCloser = new RegExp('{{/' + handle + '}}'),
     re = new RegExp('[{]{2,3}#*' + handle + "([a-z0-9_\\-\\.\\s]+)[}]{2,3}", 'gi');
 
@@ -256,9 +256,9 @@ function hbsAnalogFtl(s, handle) {
       // replace closer
       s = s.replace(reCloser, '</#if>');
     } else {
-      context = '${';
+      context = '${(';
       context += matches[1].trim();
-      context += (handle != 'visualIterator') ? '!""' : '';
+      context += (handle != 'visualIterator') ? '!"")' : ')';
       context += analogues[handle] + '}';
     }
 
@@ -310,12 +310,12 @@ function _nth(s, type, callbackBlock) {
     }
   }
 
-  return s;  
+  return s;
 }
 
 function _convertNth(s, type, match) {
   type = '{{/' + type + '}}';
-  
+
   var ret = '',
     start = s.indexOf(match),
     end = s.indexOf(type, start) + type.length;
@@ -373,7 +373,7 @@ function _convertOneWithBlock_v1(s) {
     s = s.replace(/{{\/with}}/gim, '</#macro><@with_' + handle + ' ' + handle + '/>');
     s = _applyScopingConversion(s, handle);
   }
-  
+
   return s;
 }
 
@@ -396,7 +396,7 @@ function _convertNthEach(s, each) {
 
 function _convertOneEachBlock(s, namespace) {
   var
-    matches, eachStartDelta, newEach = '', 
+    matches, eachStartDelta, newEach = '',
     beforeEach, innerEach, afterEach, scopeNamespace,
     eachStartIdx = s.search(/{{#each (.*)}}/im),
     eachEndIdx = s.lastIndexOf('{{/each}}'),
@@ -472,8 +472,8 @@ function injectMacroHandle(s, name) {
  *******************************************************************************/
 function _getIfToken(namespace, op) {
   var jsIf = [
-    '<#t><#if ',
-    '(', namespace, '$1)?has_content && (',
+      '<#t><#if ',
+      '(', namespace, '$1)?has_content && (',
       // '(',
       // booleans
       '( ', namespace, '$1?is_boolean && ', namespace, '$1 == true ) || ',
@@ -485,22 +485,22 @@ function _getIfToken(namespace, op) {
       '( ', namespace, '$1?is_sequence) || ', // ?has_content takes care of this
       // strings
       '( ', namespace, '$1?is_string)', // ?has_content takes care of this
-    ')', // end type + value checks
-    '>'
-  ].join(''),
+      ')', // end type + value checks
+      '>'
+    ].join(''),
 
-  invertedIf = [
-    '<#t><#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content || ( ', namespace, '$1?is_boolean && ', namespace, '$1 == false)>'
-  ].join(''),
+    invertedIf = [
+      '<#t><#if !(', namespace, '$1)?? || !(', namespace, '$1)?has_content || ( ', namespace, '$1?is_boolean && ', namespace, '$1 == false)>'
+    ].join(''),
 
-  
 
-  /**
-   * Template for <#if> directives
-   */
-  comparisons = [
-    '<#t><#if (', namespace, '$1)?? && (', namespace, '$1)?has_content && ', namespace, '$1 ::OPERATOR:: $2>'
-  ].join('');  
+
+    /**
+     * Template for <#if> directives
+     */
+    comparisons = [
+      '<#t><#if (', namespace, '$1)?? && (', namespace, '$1)?has_content && ', namespace, '$1 ::OPERATOR:: $2>'
+    ].join('');
 
   if(op) {
     if(op == 'unless') {
@@ -605,7 +605,7 @@ function hbsComments(s) {
 
 function hbsNoEscape(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${' + namespace + '$1!""?html}');
+  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${(' + namespace + '$1!"")}');
   return s;
 }
 
@@ -641,7 +641,7 @@ function hbsTokens(s, namespace) {
       s = s.replace(matches[0], '${((' + namespace + matches[1] + ')!false)?c}');
     } else if(matches[1].indexOf('_index') < 0) {
       // make FTL act like hbs - ignore undefineds/nulls
-      s = s.replace(matches[0], '${' + namespace + matches[1] + '!""}');
+      s = s.replace(matches[0], '${(' + namespace + matches[1] + '!"")?html}');
     }
   }
 
@@ -659,7 +659,7 @@ function hbsTokens(s, namespace) {
   return s;
 }
 
-/** 
+/**
  * convert hbs' .length to ftl's .size
  */
 function hbsSize(s) {
@@ -672,7 +672,7 @@ function hbsSize(s) {
 
 
 /**
- * convert {{#join [a,b,c] }} to 
+ * convert {{#join [a,b,c] }} to
  */
 function hbsJoin(s) {
   var re = /{{#join ([a-z0-9\.]+)}}/gim;
@@ -710,18 +710,18 @@ function ftlTrim(s) {
   return s;
   /*var line, a = s.split('\n'), out = [];
 
-  for(var i=0, n=a.length; i<n; i++) {
-    // out.push(a[i].trim());
-    line = a[i];
+   for(var i=0, n=a.length; i<n; i++) {
+   // out.push(a[i].trim());
+   line = a[i];
 
-    if(line.indexOf('//') > -1) {
-      line = line.replace(/\/\/ .*$/, '');
-    }
+   if(line.indexOf('//') > -1) {
+   line = line.replace(/\/\/ .*$/, '');
+   }
 
-    out.push('\n<#t>' + line);
-  }
+   out.push('\n<#t>' + line);
+   }
 
-  return out.join('');*/
+   return out.join('');*/
 }
 
 function ftlCompress(s) {
@@ -782,7 +782,7 @@ module.exports = {
   hbsContentFor : function(s) {
     s = s.replace(/{{#contentFor [\'|\"](\w+)[\'|\"]}}/gim, '<#global $1>');
     s = s.replace(/{{\/contentFor}}/gim, '</#global>');
-  
+
     var globals = /<#global \w+>?[^\/#global].*[\s\S\n\r]*?<\/#global>/gim;
     // move to top
     var matches = s.match(globals);
