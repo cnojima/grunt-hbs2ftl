@@ -605,7 +605,7 @@ function hbsComments(s) {
 
 function hbsNoEscape(s, namespace) {
   namespace = normalizeNamespace(namespace);
-  s = s.replace(/{{([a-z0-9_\.]+)}}/gim, '${' + namespace + '$1!""?html}');
+  s = s.replace(/{{{([a-z0-9_\.]+)}}}/gim, '${' + namespace + '$1!""?html}');
   return s;
 }
 
