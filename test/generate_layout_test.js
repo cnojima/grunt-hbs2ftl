@@ -1,6 +1,7 @@
 'use strict';
 
-var grunt = require('grunt');
+var grunt = require('grunt')
+  , globals = require('./../globals.js');
 
 /*
   ======== A Handy Little Nodeunit Reference ========
@@ -37,6 +38,9 @@ exports.generate_layout = {
     
     actual = actual.replace(/[\r\n]+/gim, '\n');
     expected = expected.replace(/[\r\n]+/gim, '\n');
+    
+    //lets not compare the versionHeader since that could/should be dynamic (and wont match our static expectations)
+    actual = actual.replace( globals.versionHeader, '' );
     
     test.equal(actual, expected, 'express-hbs layout should be converted to the Freemarker equivalent.');
 

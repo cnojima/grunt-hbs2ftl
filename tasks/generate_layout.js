@@ -13,11 +13,13 @@
 var convert = require(__dirname + '/../modules/converter/converter.js');
 
 module.exports = function(grunt) {
-  var pkg = grunt.file.readJSON( __dirname + '/../package.json');
 
   grunt.registerMultiTask('generate_layout', 'Converts express-hbs layout meta-templates Freemarker "layouts"', function() {
     //console.log('@generate_layout with ' + this.files.length + ' files');
     var fp;
+    
+    // lets not lose our header to scope
+    var versionHeader = this.data.globals.versionHeader;
 
     // Iterate over all specified file groups.
     this.files.forEach(function(f) {
@@ -65,7 +67,7 @@ module.exports = function(grunt) {
       src = convert.ftlTrim(src);
 
       // add version tag
-      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
+      src = versionHeader + src;
   
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
