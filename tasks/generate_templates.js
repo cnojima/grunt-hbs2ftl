@@ -13,7 +13,6 @@
 var convert = require(__dirname + '/../modules/converter/converter.js');
 
 module.exports = function(grunt) {
-  //console.log(grunt);
 
   grunt.registerMultiTask('generate_templates', 'Converts handlebarsJS templates into Freemarker templates', function() {
     console.log('@generate_templates with ' + this.files.length + ' files');

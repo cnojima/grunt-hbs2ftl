@@ -23,7 +23,6 @@ if(!fs.existsSync(__dirname + '/tmp')) {
 }
 
 
-
 module.exports = function(grunt) {
 
   // Project configuration.
