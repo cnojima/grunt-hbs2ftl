@@ -4,6 +4,6 @@ var grunt = require('grunt')
 
 module.exports = {
   
-  versionHeader: "<#-- TEST grunt-hbs2ftl v." + pkg.version + " -->\n"
+  versionHeader: "<#-- grunt-hbs2ftl v." + pkg.version + " -->\n"
 
 };
