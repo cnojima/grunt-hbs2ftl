@@ -13,14 +13,17 @@
 var convert = require(__dirname + '/../modules/converter/converter.js');
 
 module.exports = function(grunt) {
-
-  var pkg = grunt.file.readJSON( __dirname + '/../package.json');
+  //console.log(grunt);
 
   grunt.registerMultiTask('generate_templates', 'Converts handlebarsJS templates into Freemarker templates', function() {
     console.log('@generate_templates with ' + this.files.length + ' files');
 
+    // lets not lose our header to scope
+    var versionHeader = this.data.globals.versionHeader;
+
     // Iterate over all specified file groups.
     this.files.forEach(function(f) {
+
       var src = f.src.filter(function(filepath) {
         // Warn on and remove invalid source files (if nonull was set).
         if (!grunt.file.exists(filepath)) {
@@ -94,7 +97,7 @@ module.exports = function(grunt) {
       // html minify
       src = convert.ftlTrim(src);
 
-      src = '<#-- grunt-hbs2ftl v.' + pkg.version + ' -->\n' + src;
+      src = versionHeader + src;
       
       src = src.trim();
       
