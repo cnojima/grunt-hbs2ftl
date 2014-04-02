@@ -10,9 +10,9 @@
 
 'use strict';
 
-var path = require('path')
-  , viewsPath = __dirname + '/../../views'
-  , globals = require('./globals');
+var path = require('path'),
+    viewsPath = __dirname + '/../../views',
+    globals = require('./globals');
 
 
 module.exports = function(grunt) {

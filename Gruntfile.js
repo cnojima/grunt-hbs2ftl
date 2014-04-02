@@ -10,10 +10,10 @@
 
 'use strict';
 
-var path = require('path')
-  , fs = require('fs')
-  , viewsPath = __dirname + '/views'
-  , globals = require('./globals');
+var path = require('path'),
+    fs = require('fs'),
+    viewsPath = __dirname + '/views',
+    globals = require('./globals');
   // viewsPath = __dirname + '/../../views';
 
 
