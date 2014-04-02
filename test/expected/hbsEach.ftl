@@ -6,7 +6,7 @@
   <p>
     <#--  "this" is implied in hbs -->
     <#list (myVar)![] as i_myVar>
-      ${foo!""} is ${bar!""}
+      ${(foo!"")?html} is ${(bar!"")?html}
     </#list>
   </p>
 
@@ -14,7 +14,7 @@
 
   <p class="bar">
     <#list (myNamespace.listThing)![] as i_myNamespace_listThing>
-      ${yetAnotherFoo!""} should be ${yetAnotherBar!""}
+      ${(yetAnotherFoo!"")?html} should be ${(yetAnotherBar!"")?html}
     </#list>
   </p>
 </div>
