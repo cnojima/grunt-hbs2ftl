@@ -1,8 +1,8 @@
 //hbsEach
 'use strict';
 
-var grunt = require('grunt')
-  , globals = require('./../globals.js');
+var grunt = require('grunt'),
+    globals = require('./../globals.js');
 
 exports.test = {
   setUp: function(done) {

@@ -12,8 +12,7 @@
 
 var path = require('path'),
     fs = require('fs'),
-    viewsPath = __dirname + '/views',
-    globals = require('./globals');
+    viewsPath = __dirname + '/views';
   // viewsPath = __dirname + '/../../views';
 
 
@@ -46,8 +45,6 @@ module.exports = function(grunt) {
     // Configuration to be run (and then tested).
     generate_layout : {
       all_layouts : {
-        globals: globals,
-        
         files : [{
           expand : true,
           cwd : viewsPath + '/layouts/',
@@ -60,8 +57,6 @@ module.exports = function(grunt) {
 
     generate_templates : {
       all_hbs : {
-        globals:globals,
-        
         files : [{
           expand : true,
           cwd : viewsPath + '/',
