@@ -11,8 +11,7 @@
 'use strict';
 
 var path = require('path'),
-    viewsPath = __dirname + '/../../views',
-    globals = require('./globals');
+    viewsPath = __dirname + '/../../views';
 
 
 module.exports = function(grunt) {
@@ -37,8 +36,6 @@ module.exports = function(grunt) {
     // Configuration to be run (and then tested).
     generate_layout : {
       all_layouts : {
-        globals: globals,
-        
         files : [{
           expand : true,
           cwd : viewsPath + '/layouts/',

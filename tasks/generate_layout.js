@@ -10,16 +10,14 @@
 'use strict';
 
 
-var convert = require(__dirname + '/../modules/converter/converter.js');
+var convert = require(__dirname + '/../modules/converter/converter.js'),
+    globals = require(__dirname + '/../globals');
 
 module.exports = function(grunt) {
 
   grunt.registerMultiTask('generate_layout', 'Converts express-hbs layout meta-templates Freemarker "layouts"', function() {
     //console.log('@generate_layout with ' + this.files.length + ' files');
     var fp;
-    
-    // lets not lose our header to scope
-    var versionHeader = this.data.globals.versionHeader;
 
     // Iterate over all specified file groups.
     this.files.forEach(function(f) {
@@ -67,7 +65,7 @@ module.exports = function(grunt) {
       src = convert.ftlTrim(src);
 
       // add version tag
-      src = versionHeader + src;
+      src = globals.versionHeader + src;
   
       grunt.file.write(f.dest, src, { encoding : 'utf8'});
 
