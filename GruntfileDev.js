@@ -48,8 +48,6 @@ module.exports = function(grunt) {
 
     generate_templates : {
       all_hbs : {
-        globals: globals,
-        
         files : [{
           expand : true,
           cwd : viewsPath + '/',
