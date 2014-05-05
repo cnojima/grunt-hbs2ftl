@@ -46,6 +46,23 @@ exports.generate_layout = {
     test.equal(actual, expected, 'HandlebarsJS {{#each}} should convert to Freemarker and contextualize all variables within its scope.');
 
     test.done();
-  }
+  },
 
+  hbsEachWithParameters : function(test) {
+    test.expect(1);
+
+    var actual = grunt.file.read('tmp/func_test_hbsEach.ftl', { encoding : 'utf8'});
+    var expected = grunt.file.read('test/expected/hbsEach.ftl', { encoding : 'utf8'});
+
+
+    actual = actual.replace(/[\r\n]+/gim, '\n');
+    expected = expected.replace(/[\r\n]+/gim, '\n');
+
+    //lets not compare the versionHeader since that could/should be dynamic (and wont match our static expectations)
+    actual = actual.replace( globals.versionHeader, '' );
+
+    test.equal(actual, expected, 'HandlebarsJS {{#each}} should convert to Freemarker and contextualize all variables within its scope.');
+
+    test.done();
+  }
 };

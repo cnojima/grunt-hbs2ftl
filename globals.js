@@ -1,5 +1,5 @@
-var grunt = require('grunt')
-  , pkg = grunt.file.readJSON( __dirname + '/package.json');
+var grunt = require('grunt'),
+    pkg = grunt.file.readJSON( __dirname + '/package.json');
 
 
 module.exports = {

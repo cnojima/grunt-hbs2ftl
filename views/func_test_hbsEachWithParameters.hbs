@@ -1,0 +1,20 @@
+<!--
+{{! test handlebars #each foo -> &lt;#list foo as this&gt;}}
+-->
+
+<div class="foo">
+  <p>
+    {{! "this" is implied in hbs}}
+    {{#each myVar testParam="testing"}}
+      {{foo}} is {{bar}}
+    {{/each}}
+  </p>
+
+  lotsa stuff here....
+
+  <p class="bar">
+    {{#each myNamespace.listThing}}
+      {{yetAnotherFoo}} should be {{yetAnotherBar}}
+    {{/each}}
+  </p>
+</div>

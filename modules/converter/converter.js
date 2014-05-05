@@ -297,7 +297,7 @@ function _applyNamespace(s, type, namespace) {
  **** scope changing block converters                                       ****
  *******************************************************************************/
 function _nth(s, type, callbackBlock) {
-  var matcher = '{{#' + type + ' ([\\w\\.]+[^}])}}',
+  var matcher = '{{#' + type + ' ([\\w\\.=\\s]+[^}])}}',
     re = new RegExp(matcher, "gim"),
     matches = s.match(re),
     lastMatch, raw;
@@ -407,13 +407,33 @@ function _convertOneEachBlock(s, namespace) {
   namespace = normalizeNamespace(namespace);
 
   if(eachStartIdx > -1) {
+
     matches = s.match(/{{#each (.*)}}/im);
     beforeEach = s.substr(0, eachStartIdx);
     afterEach = s.substr(eachEndIdx + 9);
 
     if(matches) {
-      scopeNamespace = 'i_' + matches[1].replace(/\./gim, '_');
-      newEach = [ '<#list (', namespace, matches[1], ')![] as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+      var parameters = matches[1].split(/\s/);
+
+      scopeNamespace = 'i_' + parameters[0].replace(/\./gim, '_');
+
+      newEach = [ '<#list (', namespace, parameters[0], ')![] as ', scopeNamespace, '>' ].join(''); // prefix innerEach
+
+      //Add any parameters passed in as assigns
+      if (parameters.length > 1) {
+        for (i = 1; i<parameters.length; i++) {
+          var nvp = parameters[i].split('=');
+
+          // Value doesn't begin with a double quote, so it's a reference
+          if (nvp[1].charAt[0] !== '"') {
+            nvp[1] = '${' + nvp[1] + '}';
+          }
+
+          //newEach += ['<#assign ', nvp[0],'=',nvp[1],'>'].join('');
+        }
+
+      }
+
       eachStartDelta = matches[0].length;
       innerEach = s.substr(eachStartIdx + eachStartDelta, (eachEndIdx - eachStartIdx - eachStartDelta));
 
